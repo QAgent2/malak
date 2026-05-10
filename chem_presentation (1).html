@@ -1,0 +1,1506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Use Artemisia in the Medical Field</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Syne:wght@400;500;600;700;800&family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg0: #020c0e;
+  --bg1: #03101300;
+  --bg2: #041619;
+  --c1: #00B7B5;
+  --c2: #018790;
+  --c3: #00d4d1;
+  --c4: #80dfe0;
+  --dim1: rgba(0,183,181,0.08);
+  --dim2: rgba(1,135,144,0.06);
+  --text: #e8f6f7;
+  --text2: rgba(200,235,238,0.72);
+  --text3: rgba(140,200,210,0.5);
+  --glow1: 0 0 40px rgba(0,183,181,0.28), 0 0 80px rgba(0,183,181,0.1);
+  --glow2: 0 0 40px rgba(1,135,144,0.25), 0 0 80px rgba(1,135,144,0.1);
+  --border1: rgba(0,183,181,0.18);
+  --border2: rgba(1,135,144,0.14);
+  --ff-display: 'Syne', sans-serif;
+  --ff-body: 'Space Grotesk', sans-serif;
+  --ff-mono: 'IBM Plex Mono', monospace;
+  --ff-italic: 'Cormorant Garamond', serif;
+}
+
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+html, body {
+  width:100%; height:100%;
+  overflow:hidden;
+  background: var(--bg0);
+  color: var(--text);
+  font-family: var(--ff-body);
+  cursor: none;
+}
+
+#cursor {
+  position: fixed; width:12px; height:12px;
+  border-radius:50%;
+  background: var(--c1);
+  pointer-events:none; z-index:9999;
+  transform: translate(-50%,-50%);
+  transition: transform 0.1s, background 0.2s, width 0.25s, height 0.25s;
+  mix-blend-mode: screen;
+  box-shadow: 0 0 15px var(--c1);
+}
+#cursor-ring {
+  position:fixed; width:36px; height:36px;
+  border-radius:50%;
+  border: 1px solid rgba(0,183,181,0.4);
+  pointer-events:none; z-index:9998;
+  transform: translate(-50%,-50%);
+  transition: transform 0.18s cubic-bezier(0.25,1,0.5,1), width 0.3s, height 0.3s, opacity 0.3s;
+}
+
+#bg-canvas { position:fixed; inset:0; z-index:0; pointer-events:none; }
+
+#noise {
+  position:fixed; inset:0; z-index:1; pointer-events:none; opacity:0.02;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 200px;
+  animation: noiseShift 0.5s steps(1) infinite;
+}
+@keyframes noiseShift { 0%{background-position:0 0} 25%{background-position:100px 50px} 50%{background-position:50px 100px} 75%{background-position:150px 0} }
+
+#scanline {
+  position:fixed; inset:0; z-index:2; pointer-events:none;
+  background: repeating-linear-gradient(0deg, transparent 0, transparent 2px, rgba(0,0,0,0.02) 2px, rgba(0,0,0,0.02) 4px);
+}
+
+#vignette {
+  position:fixed; inset:0; z-index:3; pointer-events:none;
+  background: radial-gradient(ellipse 85% 85% at 50% 50%, transparent 50%, rgba(0,5,2,0.7) 100%);
+}
+
+#progress {
+  position:fixed; top:0; left:0; right:0; height:2px; z-index:999;
+  background: rgba(0,183,181,0.08);
+}
+#progress-fill {
+  height:100%; width:0%; background: linear-gradient(90deg, var(--c3), var(--c1), var(--c2));
+  transition: width 0.8s cubic-bezier(0.4,0,0.2,1);
+  box-shadow: 0 0 12px var(--c1);
+}
+
+#hud-counter {
+  position:fixed; top:28px; left:40px; z-index:999;
+  display:flex; align-items:center; gap:12px;
+}
+.hud-slash { font-family: var(--ff-mono); font-size:11px; letter-spacing:0.2em; color: var(--text3); text-transform:uppercase; }
+#hud-num { font-family: var(--ff-mono); font-size:28px; font-weight:500; color: var(--c1); line-height:1; text-shadow: 0 0 20px rgba(0,183,181,0.5); }
+#hud-total { font-family: var(--ff-mono); font-size:11px; color:var(--text3); margin-top:4px; }
+
+#hud-badge {
+  position:fixed; top:28px; right:40px; z-index:999;
+  font-family: var(--ff-mono); font-size:10px; letter-spacing:0.22em;
+  color: var(--text3); text-transform:uppercase;
+  display:flex; align-items:center; gap:8px;
+}
+.hud-dot { width:6px; height:6px; border-radius:50%; background: var(--c1); animation: huddot 2s ease-in-out infinite; box-shadow: 0 0 8px var(--c1); }
+@keyframes huddot { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+#side-dots {
+  position:fixed; right:32px; top:50%; transform:translateY(-50%);
+  z-index:999; display:flex; flex-direction:column; gap:6px;
+}
+.sdot {
+  position:relative; width:4px; height:4px;
+  border-radius:50%; background: rgba(0,183,181,0.22);
+  cursor:pointer; transition:all 0.4s;
+}
+.sdot.active { background: var(--c1); box-shadow: 0 0 10px var(--c1); transform: scale(2); }
+.sdot:hover { background: rgba(0,183,181,0.6); }
+
+#nav {
+  position:fixed; bottom:36px; left:50%; transform:translateX(-50%);
+  z-index:999; display:flex; align-items:center; gap:20px;
+}
+.nav-btn {
+  width:48px; height:48px; border-radius:12px;
+  border: 1px solid var(--border1);
+  background: rgba(0,15,22,0.6);
+  backdrop-filter: blur(20px);
+  color: var(--c1); font-size:16px;
+  cursor:pointer; display:flex; align-items:center; justify-content:center;
+  transition: all 0.25s; position:relative; overflow:hidden;
+}
+.nav-btn:hover { border-color: var(--c1); box-shadow: var(--glow1); transform:scale(1.08); }
+#slide-label {
+  font-family: var(--ff-mono); font-size:10px; letter-spacing:0.2em;
+  color: var(--text3); text-transform:uppercase; white-space:nowrap;
+  padding:8px 16px; border: 1px solid var(--border1); border-radius:8px;
+  background: rgba(0,15,22,0.6); backdrop-filter: blur(20px);
+}
+
+#presentation { width:100vw; height:100vh; position:relative; overflow:hidden; }
+
+.slide {
+  position:absolute; inset:0;
+  opacity:0; pointer-events:none;
+  will-change: transform, opacity;
+  transition: opacity 0s;
+}
+.slide.active { opacity:1; pointer-events:all; }
+
+.slide-content {
+  position:relative; z-index:10;
+  width:100%; height:100%;
+  padding: 6vh 7vw;
+  display:flex; flex-direction:column;
+  justify-content:center;
+}
+
+.glass {
+  background: rgba(0,20,25,0.55);
+  backdrop-filter: blur(24px) saturate(1.4);
+  border: 1px solid rgba(0,183,181,0.12);
+  border-radius:16px;
+}
+.glass-amber {
+  background: rgba(0,20,26,0.55);
+  backdrop-filter: blur(24px);
+  border: 1px solid rgba(128,223,224,0.15);
+  border-radius:16px;
+}
+.glass-bright {
+  background: rgba(0,183,181,0.06);
+  backdrop-filter: blur(24px);
+  border: 1px solid rgba(0,183,181,0.2);
+  border-radius:16px;
+}
+
+.eyebrow { font-family: var(--ff-mono); font-size:clamp(0.6rem,0.9vw,0.8rem); letter-spacing:0.3em; text-transform:uppercase; color:var(--c1); font-weight:400; }
+.display { font-family: var(--ff-display); font-weight:800; font-size:clamp(2.8rem,6.5vw,6.5rem); line-height:0.95; letter-spacing:-0.03em; color:#fff; }
+.display-sm { font-family: var(--ff-display); font-weight:700; font-size:clamp(1.8rem,3.8vw,4rem); line-height:1.0; letter-spacing:-0.02em; color:#fff; }
+.section-label { font-family: var(--ff-mono); font-size:clamp(0.65rem,1vw,0.85rem); letter-spacing:0.25em; text-transform:uppercase; color:var(--c2); font-weight:400; margin-bottom:0.5rem; }
+.headline { font-family: var(--ff-display); font-weight:700; font-size:clamp(1.4rem,3vw,3rem); letter-spacing:-0.015em; color:#fff; line-height:1.1; }
+.body { font-size:clamp(0.8rem,1.2vw,1rem); line-height:1.7; color:var(--text2); font-weight:300; }
+.caption { font-family:var(--ff-mono); font-size:clamp(0.65rem,0.9vw,0.78rem); color:var(--text3); letter-spacing:0.08em; }
+.italic { font-family:var(--ff-italic); font-style:italic; color:var(--text); font-size:clamp(0.9rem,1.4vw,1.2rem); font-weight:300; }
+.mono { font-family: var(--ff-mono); }
+
+.grad-green { background: linear-gradient(135deg, #fff 0%, var(--c1) 60%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+.grad-amber { background: linear-gradient(135deg, #fff 0%, var(--c4) 60%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+.grad-multi { background: linear-gradient(135deg, var(--c1) 0%, var(--c2) 50%, var(--c3) 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+.text-green { color:var(--c1); }
+.text-lime { color:var(--c3); }
+.text-amber { color:var(--c4); }
+.text-dim { color:var(--text2); }
+
+.rev { opacity:0; transform:translateY(32px); transition:all 0.75s cubic-bezier(0.16,1,0.3,1); }
+.rev.in { opacity:1; transform:translateY(0); }
+.rev-l { opacity:0; transform:translateX(-32px); transition:all 0.65s cubic-bezier(0.16,1,0.3,1); }
+.rev-l.in { opacity:1; transform:translateX(0); }
+.rev-r { opacity:0; transform:translateX(32px); transition:all 0.65s cubic-bezier(0.16,1,0.3,1); }
+.rev-r.in { opacity:1; transform:translateX(0); }
+.rev-s { opacity:0; transform:scale(0.88); transition:all 0.65s cubic-bezier(0.16,1,0.3,1); }
+.rev-s.in { opacity:1; transform:scale(1); }
+
+.h-rule { height:1px; background: linear-gradient(90deg, transparent, var(--c1), transparent); opacity:0.3; margin:1.5rem 0; }
+.v-rule { width:1px; background: linear-gradient(180deg, transparent, var(--c1), transparent); opacity:0.3; }
+
+.glow-line { position:absolute; bottom:0; left:0; right:0; height:1px; background: linear-gradient(90deg, transparent, var(--c1), transparent); opacity:0; transition:opacity 1s 0.5s; }
+.slide.active .glow-line { opacity:0.35; }
+
+.orb { position:absolute; border-radius:50%; pointer-events:none; filter:blur(60px); opacity:0.08; z-index:4; }
+.orb-green { background:radial-gradient(circle, var(--c1), transparent); }
+.orb-teal { background:radial-gradient(circle, var(--c3), transparent); }
+.orb-amber { background:radial-gradient(circle, var(--c4), transparent); }
+
+@keyframes pulse { 0%,100%{box-shadow:0 0 20px rgba(0,183,181,0.2)} 50%{box-shadow:0 0 40px rgba(0,183,181,0.5), 0 0 80px rgba(0,183,181,0.2)} }
+.pulsing { animation: pulse 3s ease-in-out infinite; }
+
+#key-hint {
+  position:fixed; bottom:90px; left:50%; transform:translateX(-50%);
+  font-family:var(--ff-mono); font-size:9px; letter-spacing:0.22em; color:var(--text3);
+  text-transform:uppercase; z-index:999; pointer-events:none;
+  animation: hintFade 6s forwards 1s;
+}
+@keyframes hintFade { 0%,50%{opacity:1} 100%{opacity:0} }
+
+/* Slide num indicator */
+.slide-num-indicator { position:absolute; bottom:28px; left:40px; z-index:20; font-family:var(--ff-mono); font-size:10px; color:var(--text3); letter-spacing:0.15em; }
+
+/* Title slide */
+#slide-1 { background:var(--bg0); }
+#mol1-canvas { position:absolute; top:-5%; right:-8%; width:60%; height:115%; z-index:1; pointer-events:none; }
+.title-block { max-width:52%; position:relative; z-index:5; }
+.main-title { font-family:var(--ff-display); font-weight:800; line-height:0.92; letter-spacing:-0.04em; font-size:clamp(2.4rem,5.5vw,5.8rem); color:#fff; }
+.main-title span { display:block; }
+.title-sub { font-family:var(--ff-italic); font-style:italic; font-size:clamp(0.9rem,1.4vw,1.15rem); color:var(--text2); margin:1.4rem 0 2rem; }
+.author-row { display:flex; align-items:stretch; gap:2rem; flex-wrap:wrap; }
+.author-block { display:flex; flex-direction:column; gap:5px; }
+.a-name { font-family:var(--ff-display); font-weight:600; font-size:clamp(0.82rem,1.2vw,1rem); color:#fff; }
+.a-role { font-family:var(--ff-mono); font-size:clamp(0.58rem,0.82vw,0.7rem); color:var(--text3); letter-spacing:0.1em; }
+.formula-float { position:absolute; font-family:var(--ff-mono); color:rgba(0,183,181,0.12); font-size:clamp(0.7rem,1vw,0.9rem); pointer-events:none; z-index:2; animation: floatFormula 12s ease-in-out infinite; }
+@keyframes floatFormula { 0%,100%{transform:translateY(0) rotate(-5deg); opacity:0.09} 50%{transform:translateY(-20px) rotate(5deg); opacity:0.18} }
+
+/* Contents slide */
+.outline-grid { display:grid; grid-template-columns:1fr 2fr; gap:6vw; height:100%; align-items:center; }
+.outline-chapter { display:flex; align-items:center; gap:1.5rem; padding:0.8rem 1.2rem; border-radius:12px; border: 1px solid transparent; transition: all 0.35s; cursor:default; position:relative; overflow:hidden; }
+.outline-chapter:hover { border-color:var(--border1); transform:translateX(6px); background: rgba(0,183,181,0.04); }
+.oc-num { font-family:var(--ff-mono); font-size:1.3rem; font-weight:500; color:rgba(0,183,181,0.2); min-width:38px; line-height:1; }
+.oc-main { font-family:var(--ff-display); font-size:clamp(0.82rem,1.2vw,0.98rem); font-weight:600; color:#fff; }
+.oc-sub { font-family:var(--ff-mono); font-size:0.64rem; color:var(--text3); letter-spacing:0.07em; margin-top:2px; }
+
+/* Bullet rows */
+.bullet-row { display:flex; gap:1.2rem; align-items:flex-start; padding:1rem 1.2rem; border-radius:12px; background: rgba(0,183,181,0.04); border: 1px solid rgba(0,183,181,0.08); transition:all 0.3s; }
+.bullet-row:hover { background:rgba(0,183,181,0.07); border-color:rgba(0,183,181,0.15); transform:translateX(4px); }
+.bi { font-size:1.3rem; flex-shrink:0; }
+
+/* Two column layout */
+.two-col { display:grid; grid-template-columns:1.1fr 0.9fr; gap:5vw; align-items:center; height:100%; }
+
+/* Card grid */
+.card-grid { display:grid; gap:1.2vw; }
+.card-grid-2 { grid-template-columns:1fr 1fr; }
+.card-grid-3 { grid-template-columns:1fr 1fr 1fr; }
+
+.info-card { padding:1.4rem 1.2rem; border-radius:14px; background:rgba(0,18,24,0.7); border:1px solid rgba(0,183,181,0.1); transition: all 0.3s; }
+.info-card:hover { border-color:rgba(0,183,181,0.25); transform:translateY(-4px); box-shadow:var(--glow1); }
+.ic-icon { font-size:1.8rem; margin-bottom:0.6rem; }
+.ic-title { font-family:var(--ff-display); font-size:0.88rem; font-weight:700; color:var(--c1); margin-bottom:0.4rem; letter-spacing:0.04em; }
+.ic-body { font-size:0.76rem; color:var(--text2); line-height:1.6; }
+
+/* List items */
+.list-item { display:flex; align-items:flex-start; gap:1.4rem; padding:0.9rem 1.2rem; border-radius:12px; border-left:3px solid var(--c1); background:rgba(0,18,28,0.55); border:1px solid rgba(0,183,181,0.08); border-left:3px solid var(--c1); transition:all 0.3s; margin-bottom:0.5rem; }
+.list-item:hover { background:rgba(0,183,181,0.05); border-color:rgba(0,183,181,0.2); transform:translateX(5px); }
+.li-icon { font-size:1.1rem; flex-shrink:0; margin-top:1px; }
+.li-title { font-family:var(--ff-mono); font-size:0.68rem; letter-spacing:0.16em; color:var(--c1); text-transform:uppercase; margin-bottom:3px; }
+.li-text { font-size:0.82rem; color:var(--text2); line-height:1.5; }
+
+/* Property rows */
+.prop-row { display:flex; justify-content:space-between; align-items:center; padding:0.65rem 1rem; border-bottom:1px solid rgba(0,183,181,0.07); }
+.prop-row:last-child { border-bottom:none; }
+.prop-row:hover { background:rgba(0,183,181,0.04); border-radius:8px; }
+.pr-k { font-size:0.8rem; color:var(--text2); }
+.pr-v { font-family:var(--ff-mono); font-size:0.82rem; color:var(--c1); font-weight:500; }
+
+/* Side effect card */
+.side-effect-chip { display:inline-flex; align-items:center; gap:0.5rem; padding:0.4rem 0.8rem; border-radius:20px; background:rgba(128,223,224,0.07); border:1px solid rgba(128,223,224,0.15); font-size:0.75rem; color:rgba(128,223,224,0.9); margin:0.2rem; }
+
+/* Compound card */
+.compound-section { padding:1.2rem 1.4rem; border-radius:14px; border:1px solid rgba(0,183,181,0.12); background:rgba(0,14,20,0.6); margin-bottom:0.6rem; }
+.cs-label { font-family:var(--ff-mono); font-size:0.65rem; letter-spacing:0.2em; text-transform:uppercase; color:var(--c2); margin-bottom:0.5rem; }
+
+/* Transition overlay */
+#transition-overlay { position:fixed; inset:0; z-index:500; pointer-events:none; background: var(--bg0); opacity:0; transition:opacity 0.35s ease; }
+#transition-overlay.active { opacity:1; }
+
+/* Intro screen */
+#intro-screen { position:fixed; inset:0; z-index:1000; background:var(--bg0); display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:1.8rem; }
+.intro-logo { font-family:var(--ff-mono); font-size:10px; letter-spacing:0.4em; color:var(--text3); text-transform:uppercase; }
+.intro-chem { font-family:var(--ff-display); font-weight:800; font-size:clamp(1.5rem,4vw,3.5rem); letter-spacing:-0.02em; color:#fff; opacity:0; transform:translateY(20px); transition: all 1s 0.8s cubic-bezier(0.16,1,0.3,1); }
+.intro-chem.show { opacity:1; transform:translateY(0); }
+.intro-line { width:0; height:1px; background:linear-gradient(90deg, transparent, var(--c1), transparent); transition:width 1.5s 1.8s ease; }
+.intro-line.show { width:280px; }
+.intro-sub { font-family:var(--ff-mono); font-size:10px; letter-spacing:0.3em; color:var(--c1); text-transform:uppercase; opacity:0; transition: opacity 0.8s 2.8s; }
+.intro-sub.show { opacity:1; }
+.intro-start { padding:12px 32px; border-radius:8px; border:1px solid var(--border1); background:rgba(0,183,181,0.06); color:var(--c1); font-family:var(--ff-mono); font-size:11px; letter-spacing:0.2em; cursor:pointer; opacity:0; transition:all 0.5s 3.4s; text-transform:uppercase; }
+.intro-start.show { opacity:1; }
+.intro-start:hover { background:rgba(0,183,181,0.12); box-shadow:var(--glow1); }
+#intro-canvas { position:absolute; inset:0; z-index:-1; opacity:0.6; }
+
+/* Thank you slide */
+.ty-title { font-family:var(--ff-display); font-weight:800; font-size:clamp(4rem,10vw,9rem); letter-spacing:-0.04em; line-height:0.9; background:linear-gradient(135deg, var(--c1) 0%, var(--c2) 50%, var(--c3) 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; filter:drop-shadow(0 0 40px rgba(0,183,181,0.3)); }
+
+@media(max-width:900px) {
+  .two-col, .outline-grid { grid-template-columns:1fr; }
+  .card-grid-3 { grid-template-columns:1fr 1fr; }
+  .title-block { max-width:90%; }
+  #mol1-canvas { width:50%; right:-2%; }
+}
+</style>
+</head>
+<body>
+
+<canvas id="bg-canvas"></canvas>
+<div id="cursor"></div>
+<div id="cursor-ring"></div>
+<div id="noise"></div>
+<div id="scanline"></div>
+<div id="vignette"></div>
+<div id="progress"><div id="progress-fill"></div></div>
+<div id="transition-overlay"></div>
+
+<!-- INTRO -->
+<div id="intro-screen">
+  <canvas id="intro-canvas"></canvas>
+  <div class="intro-logo">Biochemistry Project · Medicinal Plants · 2025</div>
+  <h1 class="intro-chem" id="intro-title">ARTEMISIA<br>WORMWOOD</h1>
+  <div class="intro-line" id="intro-line"></div>
+  <div class="intro-sub" id="intro-sub">Use of Artemisia in the Medical Field · Essential Oils Analysis</div>
+  <button class="intro-start" id="intro-start" onclick="startPresentation()">Enter Presentation →</button>
+</div>
+
+<!-- HUD -->
+<div id="hud-counter">
+  <div id="hud-num">01</div>
+  <div style="display:flex;flex-direction:column;">
+    <div class="hud-slash">Slide</div>
+    <div id="hud-total">of 25</div>
+  </div>
+</div>
+<div id="hud-badge">
+  <div class="hud-dot"></div>
+  <span>Artemisia · Biochemistry Project</span>
+</div>
+
+<div id="side-dots"></div>
+
+<div id="presentation">
+
+  <!-- ═══ SLIDE 1 — TITLE ═══ -->
+  <div class="slide" id="slide-1">
+    <canvas id="mol1-canvas"></canvas>
+    <div class="orb orb-green" style="width:500px;height:500px;top:-10%;right:-5%;"></div>
+    <div class="orb orb-lime" style="width:300px;height:300px;bottom:5%;left:30%;"></div>
+    <div class="formula-float" style="top:12%;left:55%;animation-delay:0s;">C₁₀H₁₈O</div>
+    <div class="formula-float" style="top:28%;left:63%;animation-delay:2.5s;">1,8-Cineole</div>
+    <div class="formula-float" style="top:50%;left:58%;animation-delay:5s;">α-Thujone</div>
+    <div class="formula-float" style="top:68%;left:66%;animation-delay:1.5s;">β-Thujone</div>
+    <div class="formula-float" style="top:20%;left:73%;animation-delay:3.5s;">C₁₀H₁₆O</div>
+
+    <div class="slide-content" style="justify-content:flex-end;padding-bottom:9vh;">
+      <div class="title-block">
+        <div class="rev" style="display:flex;align-items:center;gap:16px;margin-bottom:1.8rem;transition-delay:0s;">
+          <div style="flex:1;height:1px;max-width:80px;background:linear-gradient(90deg,var(--c1),transparent);"></div>
+          <div class="eyebrow">Biochemistry Project · Medicinal Plants</div>
+        </div>
+        <div class="main-title rev" style="transition-delay:0.12s;">
+          <span>USE</span>
+          <span class="grad-green">ARTEMISIA</span>
+          <span>IN THE</span>
+          <span style="color:rgba(255,255,255,0.35);">MEDICAL FIELD</span>
+        </div>
+        <div class="title-sub rev" style="transition-delay:0.28s;">Analysis of Essential Oil Compounds: 1,8-Cineole, α-Thujone & β-Thujone</div>
+        <div class="author-row rev" style="transition-delay:0.44s;">
+          <div class="author-block">
+            <div class="a-role">Prepared by</div>
+            <div class="a-name">Malak Qaralleh</div>
+            <div class="a-name">Rania Lutfi</div>
+            <div class="a-name">Noor Adnan</div>
+            <div class="a-name">Mohammed Ali</div>
+          </div>
+          <div class="v-rule" style="height:70px;margin:0 0.5rem;"></div>
+          <div class="author-block">
+            <div class="a-role">Supervisor</div>
+            <div class="a-name">Dr. Khaleel Abu-Sbeih</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="glow-line"></div>
+    <div class="slide-num-indicator">01 / 25</div>
+  </div>
+
+  <!-- ═══ SLIDE 2 — CONTENTS ═══ -->
+  <div class="slide" id="slide-2">
+    <div class="orb orb-green" style="width:400px;height:400px;top:-5%;right:-5%;"></div>
+    <div class="slide-content">
+      <div class="outline-grid" style="height:calc(100vh - 12vh);">
+        <div>
+          <div class="section-label rev" style="transition-delay:0s;">Navigation</div>
+          <div class="display rev" style="transition-delay:0.1s;">Table of<br><span class="grad-green">Contents</span></div>
+          <div class="h-rule rev" style="transition-delay:0.2s;"></div>
+          <div class="italic rev" style="transition-delay:0.25s;max-width:260px;">A comprehensive exploration of Artemisia's medicinal compounds and their therapeutic applications.</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:3px;">
+          <div class="outline-chapter rev" style="transition-delay:0.1s;"><div class="oc-num">01</div><div><div class="oc-main">Introduction</div><div class="oc-sub">About Artemisia (Wormwood)</div></div></div>
+          <div class="outline-chapter rev" style="transition-delay:0.16s;"><div class="oc-num">02</div><div><div class="oc-main">Artemisia in Medicine</div><div class="oc-sub">Diabetes Management & Uses</div></div></div>
+          <div class="outline-chapter rev" style="transition-delay:0.22s;"><div class="oc-num">03</div><div><div class="oc-main">GC–MS Analysis & Structures</div><div class="oc-sub">Major Compounds Identified</div></div></div>
+          <div class="outline-chapter rev" style="transition-delay:0.28s;"><div class="oc-num">04</div><div><div class="oc-main">Oil Extraction Process</div><div class="oc-sub">Steam Distillation Method</div></div></div>
+          <div class="outline-chapter rev" style="transition-delay:0.34s;"><div class="oc-num">05</div><div><div class="oc-main">1,8-Cineole (Eucalyptol)</div><div class="oc-sub">Properties · Uses · Side Effects</div></div></div>
+          <div class="outline-chapter rev" style="transition-delay:0.40s;"><div class="oc-num">06</div><div><div class="oc-main">Alpha-Thujone</div><div class="oc-sub">Properties · Uses · Side Effects</div></div></div>
+          <div class="outline-chapter rev" style="transition-delay:0.46s;"><div class="oc-num">07</div><div><div class="oc-main">Beta-Thujone</div><div class="oc-sub">Properties · Uses · Side Effects</div></div></div>
+          <div class="outline-chapter rev" style="transition-delay:0.52s;"><div class="oc-num">08</div><div><div class="oc-main">Acknowledgment & References</div><div class="oc-sub">Credits · Scientific Citations</div></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="glow-line"></div>
+    <div class="slide-num-indicator">02 / 25</div>
+  </div>
+
+  <!-- ═══ SLIDE 3 — INTRODUCTION ═══ -->
+  <div class="slide" id="slide-3">
+    <div class="orb orb-lime" style="width:350px;height:350px;bottom:-5%;right:-5%;"></div>
+    <div class="slide-content">
+      <div class="two-col" style="height:calc(100vh - 12vh);">
+        <div style="display:flex;flex-direction:column;gap:1.4rem;">
+          <div>
+            <div class="section-label rev">Introduction</div>
+            <div class="display-sm rev" style="transition-delay:0.1s;">About <span class="text-green">Artemisia</span><br>Wormwood</div>
+          </div>
+          <div class="body rev" style="transition-delay:0.2s;">
+            Artemisia is a medicinal plant found in dry regions like Jordan. It contains essential oils such as <strong style="color:var(--c1);">camphor, cineole, and thujone</strong> (about 0.5–2%).
+          </div>
+          <div class="bullet-row rev" style="transition-delay:0.3s;"><span class="bi"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c1)"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg></span><div class="body"><strong style="color:var(--c1);">Anti-inflammatory:</strong> Reduces inflammation throughout the body</div></div>
+          <div class="bullet-row rev" style="transition-delay:0.38s;"><span class="bi"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c1)"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="m8.5 8.5 7 7"/></svg></span><div class="body"><strong style="color:var(--c1);">Pain relief & Digestion:</strong> Relieves pain and aids digestive function</div></div>
+          <div class="bullet-row rev" style="transition-delay:0.46s;"><span class="bi"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c1)"><path d="M12 2L6 14a6 6 0 1 0 12 0L12 2z"/></svg></span><div class="body"><strong style="color:var(--c1);">Blood sugar regulation:</strong> May help control blood sugar levels</div></div>
+          <div class="bullet-row rev" style="transition-delay:0.54s;"><span class="bi"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c1)"><path d="m8 3 4 8 5-5 5 15H2L8 3z"/></svg>️</span><div class="body"><strong style="color:var(--c1);">Hardy plant:</strong> Grows in harsh, dry conditions which increase its active compounds</div></div>
+        </div>
+        <div class="rev-r glass" style="padding:2rem;transition-delay:0.2s;">
+          <div class="caption" style="letter-spacing:0.2em;color:var(--c1);margin-bottom:1.2rem;">PLANT OVERVIEW</div>
+          <div class="prop-row"><span class="pr-k"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c1)"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg> Native Region</span><span class="pr-v">Jordan & Dry Areas</span></div>
+          <div class="prop-row"><span class="pr-k"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c1)"><path d="M14.5 2v17.5c0 1.4-1.1 2.5-2.5 2.5s-2.5-1.1-2.5-2.5V2"/><path d="M8.5 2h7"/><path d="M14.5 16h-5"/></svg> Oil Content</span><span class="pr-v">0.5–2%</span></div>
+          <div class="prop-row"><span class="pr-k"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c1)"><path d="M6 18L14 6"/><path d="M6 18h12"/><path d="M9 12h6"/><circle cx="14" cy="6" r="2"/></svg> Key Compound</span><span class="pr-v">1,8-Cineole</span></div>
+          <div class="prop-row"><span class="pr-k"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c1)"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/></svg> Active Compound</span><span class="pr-v">Camphor + Thujone</span></div>
+          <div class="prop-row"><span class="pr-k"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c4)"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg> Primary Use</span><span class="pr-v">Medicinal / Herbal</span></div>
+          <div style="margin-top:1.2rem;padding:0.9rem 1rem;background:rgba(0,183,181,0.08);border-radius:10px;border:1px solid rgba(0,183,181,0.15);text-align:center;">
+            <div class="caption" style="color:var(--c1);">Known as Wormwood — used for centuries in traditional medicine</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="glow-line"></div>
+    <div class="slide-num-indicator">03 / 25</div>
+  </div>
+
+  <!-- ═══ SLIDE 4 — ARTEMISIA MEDICAL USES (DIABETES) ═══ -->
+  <div class="slide" id="slide-4">
+    <div class="orb orb-amber" style="width:400px;height:300px;top:-5%;right:10%;"></div>
+    <div class="slide-content">
+      <div style="margin-bottom:2rem;">
+        <div class="section-label rev">Medical Applications</div>
+        <div class="display-sm rev" style="transition-delay:0.1s;">Artemisia Uses in the<br><span class="grad-green">Medical Field</span></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1.2fr 0.8fr;gap:4vw;flex:1;align-items:center;">
+        <div style="display:flex;flex-direction:column;gap:0.8rem;">
+          <div class="list-item rev" style="transition-delay:0.15s;"><span class="li-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c1)"><path d="M12 2L6 14a6 6 0 1 0 12 0L12 2z"/></svg></span><div><div class="li-title">Blood Sugar Regulation</div><div class="li-text">May support diabetes management by helping regulate blood sugar and improving metabolism</div></div></div>
+          <div class="list-item rev" style="transition-delay:0.23s;border-left-color:var(--c3);"><span class="li-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c1)"><path d="M9 3h6v8l3.5 8H5.5L9 11z"/><path d="M3 3h18"/></svg></span><div><div class="li-title" style="color:var(--c3);">Antioxidant Effects</div><div class="li-text">Provides antioxidant effects that reduce oxidative stress caused by high blood sugar</div></div></div>
+          <div class="list-item rev" style="transition-delay:0.31s;border-left-color:var(--c4);"><span class="li-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c4)"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg></span><div><div class="li-title" style="color:var(--c4);">Anti-inflammatory</div><div class="li-text">Decreasing inflammation while potentially supporting insulin function</div></div></div>
+          <div class="list-item rev" style="transition-delay:0.39s;border-left-color:#f472b6;"><span class="li-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c1)"><path d="m18 2 4 4"/><path d="m17 7 3-3"/><path d="M19 9 8.7 19.3c-1 1-2.5 1-3.4 0l-.6-.6c-1-1-1-2.5 0-3.4L15 5"/><path d="m9 11 4 4"/><path d="m5 19-3 3"/><path d="m14 4 6 6"/></svg></span><div><div class="li-title" style="color:#f472b6;">Insulin Support</div><div class="li-text">May potentially support insulin function — however, should NOT replace prescribed diabetes medications</div></div></div>
+        </div>
+        <div class="rev-r glass-amber" style="padding:1.8rem;transition-delay:0.25s;">
+          <div class="caption" style="letter-spacing:0.18em;color:var(--c4);margin-bottom:1rem;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c4)"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> IMPORTANT CAUTION</div>
+          <div class="body" style="font-size:0.82rem;margin-bottom:1rem;">While Artemisia shows promise for diabetes support, caution is essential:</div>
+          <div style="display:flex;flex-direction:column;gap:0.5rem;">
+            <div style="padding:0.5rem 0.8rem;border-radius:8px;background:rgba(128,223,224,0.06);border:1px solid rgba(128,223,224,0.12);font-size:0.76rem;color:var(--text2);"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c1)"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/></svg> Monitor blood sugar levels regularly</div>
+            <div style="padding:0.5rem 0.8rem;border-radius:8px;background:rgba(128,223,224,0.06);border:1px solid rgba(128,223,224,0.12);font-size:0.76rem;color:var(--text2);"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c4)"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Avoid excessive amounts</div>
+            <div style="padding:0.5rem 0.8rem;border-radius:8px;background:rgba(128,223,224,0.06);border:1px solid rgba(128,223,224,0.12);font-size:0.76rem;color:var(--text2);"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c4)"><circle cx="12" cy="5" r="3"/><path d="M7 22c0-4.4 2-7 5-7s5 2.6 5 7"/><path d="M10 13c-.3 2-1 3-1 3h6s-.7-1-1-3"/></svg> Avoid during pregnancy or breastfeeding without medical advice</div>
+            <div style="padding:0.5rem 0.8rem;border-radius:8px;background:rgba(128,223,224,0.06);border:1px solid rgba(128,223,224,0.12);font-size:0.76rem;color:var(--text2);"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c4)"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg> Does not replace prescribed medications</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="glow-line"></div>
+    <div class="slide-num-indicator">04 / 25</div>
+  </div>
+
+  <!-- ═══ SLIDE 5 — GC-MS ANALYSIS ═══ -->
+  <div class="slide" id="slide-5">
+    <div class="orb orb-green" style="width:450px;height:300px;top:-5%;left:10%;"></div>
+    <div class="slide-content">
+      <div style="margin-bottom:1.8rem;">
+        <div class="section-label rev">Chemical Analysis</div>
+        <div class="display-sm rev" style="transition-delay:0.1s;">According to Recent<br><span class="grad-green">GC–MS Analyses</span></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1.5vw;flex:1;align-items:stretch;">
+        <div class="info-card rev" style="transition-delay:0.15s;">
+          <div class="ic-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c1)"><path d="M6 18L14 6"/><path d="M6 18h12"/><path d="M9 12h6"/><circle cx="14" cy="6" r="2"/></svg></div>
+          <div class="ic-title">1,8-Cineole (Eucalyptol)</div>
+          <div class="ic-body">The most abundant compound in Artemisia essential oil. A monoterpene ether with formula C₁₀H₁₈O. Responsible for the characteristic eucalyptus-like aroma and most of the therapeutic properties.</div>
+        </div>
+        <div class="info-card rev" style="transition-delay:0.25s;border-color:rgba(0,212,209,0.15);">
+          <div class="ic-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c1)"><path d="M9 3h6v8l3.5 8H5.5L9 11z"/><path d="M3 3h18"/></svg></div>
+          <div class="ic-title" style="color:var(--c3);">α-Thujone (Alpha-Thujone)</div>
+          <div class="ic-body">A naturally occurring monoterpene ketone with formula C₁₀H₁₆O. Known for its strong herbal aroma and biological effects on the nervous system. Commonly found in wormwood and sage.</div>
+        </div>
+        <div class="info-card rev" style="transition-delay:0.35s;border-color:rgba(128,223,224,0.15);">
+          <div class="ic-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c1)"><path d="M14.5 2v17.5c0 1.4-1.1 2.5-2.5 2.5s-2.5-1.1-2.5-2.5V2"/><path d="M8.5 2h7"/><path d="M14.5 16h-5"/></svg></div>
+          <div class="ic-title" style="color:var(--c4);">β-Thujone (Beta-Thujone)</div>
+          <div class="ic-body">Structural isomer of Alpha-Thujone — same formula C₁₀H₁₆O but different spatial arrangement. Found in essential oils of Artemisia absinthium, obtained through distillation.</div>
+        </div>
+      </div>
+      <div class="glass rev" style="padding:1rem 1.8rem;margin-top:1.2rem;transition-delay:0.45s;display:flex;gap:3rem;align-items:center;justify-content:center;">
+        <div style="text-align:center;"><div style="font-family:var(--ff-mono);font-size:1.3rem;color:var(--c1);">C₁₀H₁₈O</div><div class="caption">1,8-Cineole Formula</div></div>
+        <div style="width:1px;height:40px;background:rgba(0,183,181,0.15);"></div>
+        <div style="text-align:center;"><div style="font-family:var(--ff-mono);font-size:1.3rem;color:var(--c3);">C₁₀H₁₆O</div><div class="caption">Thujone Formula</div></div>
+        <div style="width:1px;height:40px;background:rgba(0,183,181,0.15);"></div>
+        <div style="text-align:center;"><div style="font-family:var(--ff-mono);font-size:1.3rem;color:var(--c4);">152.23 g/mol</div><div class="caption">Thujone Mol. Weight</div></div>
+        <div style="width:1px;height:40px;background:rgba(0,183,181,0.15);"></div>
+        <div style="text-align:center;"><div style="font-family:var(--ff-mono);font-size:1.3rem;color:var(--c2);">154.25 g/mol</div><div class="caption">Cineole Mol. Weight</div></div>
+      </div>
+    </div>
+    <div class="glow-line"></div>
+    <div class="slide-num-indicator">05 / 25</div>
+  </div>
+
+  <!-- ═══ SLIDE 6 — STRUCTURES OF MAJOR COMPOUNDS ═══ -->
+  <div class="slide" id="slide-6">
+    <div class="orb orb-lime" style="width:380px;height:380px;bottom:-10%;right:-5%;"></div>
+    <div class="slide-content">
+      <div style="margin-bottom:1.8rem;">
+        <div class="section-label rev">Molecular Structures</div>
+        <div class="display-sm rev" style="transition-delay:0.1s;">Structures of Major<br><span class="text-green">Compounds in Artemisia Oil</span></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1.5vw;flex:1;align-items:stretch;">
+        <div class="rev" style="transition-delay:0.15s;padding:1.6rem;border-radius:16px;background:rgba(0,18,24,0.7);border:1px solid rgba(0,183,181,0.2);">
+          <div style="text-align:center;margin-bottom:1rem;">
+            <div style="font-family:var(--ff-display);font-weight:800;font-size:1.2rem;color:var(--c1);">1,8-Cineole</div>
+            <div style="font-family:var(--ff-mono);font-size:0.78rem;color:var(--text3);">Eucalyptol</div>
+          </div>
+          <svg viewBox="0 0 180 140" style="width:100%;max-height:120px;display:block;margin:0 auto 1rem;">
+            <circle cx="90" cy="70" r="22" fill="none" stroke="#00B7B5" stroke-width="2.5" opacity="0.7"/>
+            <circle cx="90" cy="70" r="10" fill="#00B7B5" opacity="0.3"/>
+            <text x="90" y="74" text-anchor="middle" fill="#00B7B5" font-size="9" font-family="monospace">O</text>
+            <polygon points="90,48 108,59 108,81 90,92 72,81 72,59" fill="none" stroke="#018790" stroke-width="1.8" opacity="0.5"/>
+            <circle cx="90" cy="48" r="4" fill="#018790" opacity="0.6"/>
+            <circle cx="108" cy="59" r="4" fill="#018790" opacity="0.6"/>
+            <circle cx="108" cy="81" r="4" fill="#018790" opacity="0.6"/>
+            <circle cx="90" cy="92" r="4" fill="#018790" opacity="0.6"/>
+            <circle cx="72" cy="81" r="4" fill="#018790" opacity="0.6"/>
+            <circle cx="72" cy="59" r="4" fill="#018790" opacity="0.6"/>
+            <text x="90" y="120" text-anchor="middle" fill="#00B7B5" font-size="10" font-family="monospace">C₁₀H₁₈O</text>
+            <text x="90" y="132" text-anchor="middle" fill="rgba(128,210,218,0.4)" font-size="8" font-family="monospace">Monoterpene Ether</text>
+          </svg>
+          <div style="font-size:0.75rem;color:var(--text2);line-height:1.5;">Bicyclic monoterpene ether with characteristic oxygen bridge. Responsible for the eucalyptus-like aroma.</div>
+        </div>
+        <div class="rev" style="transition-delay:0.25s;padding:1.6rem;border-radius:16px;background:rgba(0,18,24,0.7);border:1px solid rgba(0,212,209,0.2);">
+          <div style="text-align:center;margin-bottom:1rem;">
+            <div style="font-family:var(--ff-display);font-weight:800;font-size:1.2rem;color:var(--c3);">α-Thujone</div>
+            <div style="font-family:var(--ff-mono);font-size:0.78rem;color:var(--text3);">Alpha-Thujone</div>
+          </div>
+          <svg viewBox="0 0 180 140" style="width:100%;max-height:120px;display:block;margin:0 auto 1rem;">
+            <polygon points="90,35 128,57 128,100 90,122 52,100 52,57" fill="none" stroke="#00d4d1" stroke-width="2" opacity="0.6"/>
+            <line x1="90" y1="35" x2="90" y2="65" stroke="#00d4d1" stroke-width="1.5" opacity="0.5"/>
+            <line x1="90" y1="65" x2="115" y2="78" stroke="#00d4d1" stroke-width="1.5" opacity="0.5"/>
+            <line x1="90" y1="65" x2="65" y2="78" stroke="#00d4d1" stroke-width="1.5" opacity="0.5"/>
+            <circle cx="90" cy="55" r="6" fill="none" stroke="#80dfe0" stroke-width="2" opacity="0.7"/>
+            <text x="90" y="58" text-anchor="middle" fill="#80dfe0" font-size="7" font-family="monospace">C=O</text>
+            <circle cx="90" cy="35" r="4" fill="#00d4d1" opacity="0.6"/>
+            <circle cx="128" cy="57" r="4" fill="#00d4d1" opacity="0.6"/>
+            <circle cx="128" cy="100" r="4" fill="#00d4d1" opacity="0.6"/>
+            <circle cx="90" cy="122" r="4" fill="#00d4d1" opacity="0.6"/>
+            <circle cx="52" cy="100" r="4" fill="#00d4d1" opacity="0.6"/>
+            <circle cx="52" cy="57" r="4" fill="#00d4d1" opacity="0.6"/>
+            <text x="90" y="120" text-anchor="middle" fill="#00d4d1" font-size="10" font-family="monospace">C₁₀H₁₆O</text>
+            <text x="90" y="132" text-anchor="middle" fill="rgba(128,210,218,0.4)" font-size="8" font-family="monospace">Monoterpene Ketone</text>
+          </svg>
+          <div style="font-size:0.75rem;color:var(--text2);line-height:1.5;">Bicyclic monoterpene ketone with a ketone (C=O) functional group. Known for nervous system effects.</div>
+        </div>
+        <div class="rev" style="transition-delay:0.35s;padding:1.6rem;border-radius:16px;background:rgba(0,18,24,0.7);border:1px solid rgba(128,223,224,0.2);">
+          <div style="text-align:center;margin-bottom:1rem;">
+            <div style="font-family:var(--ff-display);font-weight:800;font-size:1.2rem;color:var(--c4);">β-Thujone</div>
+            <div style="font-family:var(--ff-mono);font-size:0.78rem;color:var(--text3);">Beta-Thujone</div>
+          </div>
+          <svg viewBox="0 0 180 140" style="width:100%;max-height:120px;display:block;margin:0 auto 1rem;">
+            <polygon points="90,35 128,57 128,100 90,122 52,100 52,57" fill="none" stroke="#80dfe0" stroke-width="2" opacity="0.6"/>
+            <line x1="52" y1="57" x2="90" y2="78" stroke="#80dfe0" stroke-width="1.5" opacity="0.5"/>
+            <line x1="90" y1="78" x2="128" y2="57" stroke="#80dfe0" stroke-width="1.5" opacity="0.5"/>
+            <line x1="90" y1="78" x2="90" y2="122" stroke="#80dfe0" stroke-width="1.5" opacity="0.5"/>
+            <circle cx="90" cy="68" r="6" fill="none" stroke="#80dfe0" stroke-width="2" opacity="0.7"/>
+            <text x="90" y="71" text-anchor="middle" fill="#80dfe0" font-size="7" font-family="monospace">C=O</text>
+            <circle cx="90" cy="35" r="4" fill="#80dfe0" opacity="0.6"/>
+            <circle cx="128" cy="57" r="4" fill="#80dfe0" opacity="0.6"/>
+            <circle cx="128" cy="100" r="4" fill="#80dfe0" opacity="0.6"/>
+            <circle cx="90" cy="122" r="4" fill="#80dfe0" opacity="0.6"/>
+            <circle cx="52" cy="100" r="4" fill="#80dfe0" opacity="0.6"/>
+            <circle cx="52" cy="57" r="4" fill="#80dfe0" opacity="0.6"/>
+            <text x="90" y="120" text-anchor="middle" fill="#80dfe0" font-size="10" font-family="monospace">C₁₀H₁₆O</text>
+            <text x="90" y="132" text-anchor="middle" fill="rgba(128,210,218,0.4)" font-size="8" font-family="monospace">Structural Isomer of α</text>
+          </svg>
+          <div style="font-size:0.75rem;color:var(--text2);line-height:1.5;">Structural isomer of Alpha-Thujone — same molecular formula, different spatial arrangement of atoms.</div>
+        </div>
+      </div>
+    </div>
+    <div class="glow-line"></div>
+    <div class="slide-num-indicator">06 / 25</div>
+  </div>
+
+  <!-- ═══ SLIDE 7 — OIL EXTRACTION PROCESS ═══ -->
+  <div class="slide" id="slide-7">
+    <div class="orb orb-green" style="width:350px;height:350px;top:-5%;left:-5%;"></div>
+    <div class="slide-content">
+      <div style="margin-bottom:2rem;">
+        <div class="section-label rev">Methodology</div>
+        <div class="display-sm rev" style="transition-delay:0.1s;">Oil Extraction<br><span class="grad-green">Process</span></div>
+      </div>
+      <div style="display:flex;align-items:stretch;gap:0;flex:1;max-height:55vh;">
+        <div class="rev flow-step" style="transition-delay:0.15s;flex:1;padding:1.4rem 1rem;border-radius:14px;background:rgba(0,18,28,0.62);border:1px solid rgba(0,183,181,0.12);text-align:center;display:flex;flex-direction:column;align-items:center;gap:0.6rem;">
+          <div style="font-size:2rem;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c1)"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg></div>
+          <div style="font-family:var(--ff-mono);font-size:0.75rem;color:rgba(0,183,181,0.2);font-weight:400;line-height:1;">01</div>
+          <div style="font-family:var(--ff-display);font-size:0.88rem;font-weight:700;color:var(--c1);">Collection</div>
+          <div style="font-size:0.72rem;color:var(--text2);line-height:1.5;">Wormwood leaves were collected and washed thoroughly</div>
+        </div>
+        <div style="display:flex;align-items:center;padding:0 0.6rem;color:rgba(0,183,181,0.3);font-size:1rem;flex-shrink:0;">→</div>
+        <div class="rev flow-step" style="transition-delay:0.23s;flex:1;padding:1.4rem 1rem;border-radius:14px;background:rgba(0,18,28,0.62);border:1px solid rgba(0,183,181,0.12);text-align:center;display:flex;flex-direction:column;align-items:center;gap:0.6rem;">
+          <div style="font-size:2rem;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c1)"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/></svg></div>
+          <div style="font-family:var(--ff-mono);font-size:0.75rem;color:rgba(0,183,181,0.2);font-weight:400;line-height:1;">02</div>
+          <div style="font-family:var(--ff-display);font-size:0.88rem;font-weight:700;color:var(--c1);">Soaking</div>
+          <div style="font-size:0.72rem;color:var(--text2);line-height:1.5;">Soaked in water for <strong style="color:var(--c2);">24 hours</strong> to help release volatile oils</div>
+        </div>
+        <div style="display:flex;align-items:center;padding:0 0.6rem;color:rgba(0,183,181,0.3);font-size:1rem;flex-shrink:0;">→</div>
+        <div class="rev flow-step" style="transition-delay:0.31s;flex:1;padding:1.4rem 1rem;border-radius:14px;background:rgba(0,18,28,0.62);border:1px solid rgba(0,183,181,0.12);text-align:center;display:flex;flex-direction:column;align-items:center;gap:0.6rem;">
+          <div style="font-size:2rem;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c4)"><path d="M12 2C12 2 8 6 8 10a4 4 0 0 0 8 0c0-4-4-8-4-8z"/><path d="M8 22h8"/><path d="M12 14v8"/></svg></div>
+          <div style="font-family:var(--ff-mono);font-size:0.75rem;color:rgba(0,183,181,0.2);font-weight:400;line-height:1;">03</div>
+          <div style="font-family:var(--ff-display);font-size:0.88rem;font-weight:700;color:var(--c1);">Steam Distillation</div>
+          <div style="font-size:0.72rem;color:var(--text2);line-height:1.5;">Plant material placed in steam distillation apparatus; steam carries essential oils</div>
+        </div>
+        <div style="display:flex;align-items:center;padding:0 0.6rem;color:rgba(0,183,181,0.3);font-size:1rem;flex-shrink:0;">→</div>
+        <div class="rev flow-step" style="transition-delay:0.39s;flex:1;padding:1.4rem 1rem;border-radius:14px;background:rgba(0,18,28,0.62);border:1px solid rgba(0,183,181,0.12);text-align:center;display:flex;flex-direction:column;align-items:center;gap:0.6rem;">
+          <div style="font-size:2rem;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c1)"><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/><path d="m20 16-4-4 4-4m-16 8 4-4-4-4m4-4 4 4 4-4m-8 16 4-4 4 4"/></svg></div>
+          <div style="font-family:var(--ff-mono);font-size:0.75rem;color:rgba(0,183,181,0.2);font-weight:400;line-height:1;">04</div>
+          <div style="font-family:var(--ff-display);font-size:0.88rem;font-weight:700;color:var(--c1);">Condensation</div>
+          <div style="font-size:0.72rem;color:var(--text2);line-height:1.5;">Vapor condensed back into liquid using a condenser</div>
+        </div>
+        <div style="display:flex;align-items:center;padding:0 0.6rem;color:rgba(0,183,181,0.3);font-size:1rem;flex-shrink:0;">→</div>
+        <div class="rev flow-step" style="transition-delay:0.47s;flex:1;padding:1.4rem 1rem;border-radius:14px;background:rgba(0,20,26,0.7);border:1px solid rgba(0,183,181,0.3);text-align:center;display:flex;flex-direction:column;align-items:center;gap:0.6rem;box-shadow:var(--glow1);">
+          <div style="font-size:2rem;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c1)"><path d="M9.5 2h5l1 5H8.5z"/><path d="M8 7h8l2 14H6L8 7z"/><path d="M10 13c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2-2-.9-2-2z"/></svg></div>
+          <div style="font-family:var(--ff-mono);font-size:0.75rem;color:rgba(0,183,181,0.2);font-weight:400;line-height:1;">05</div>
+          <div style="font-family:var(--ff-display);font-size:0.88rem;font-weight:700;color:var(--c1);">Collection</div>
+          <div style="font-size:0.72rem;color:var(--text2);line-height:1.5;">Mixture of water and oil collected — essential oil separated</div>
+        </div>
+      </div>
+      <div class="glass-bright rev" style="padding:0.9rem 1.6rem;margin-top:1.2rem;transition-delay:0.55s;">
+        <div class="italic" style="font-size:0.88rem;color:var(--c1);">Steam distillation is the standard method for extracting volatile essential oils from Artemisia wormwood plant material.</div>
+      </div>
+    </div>
+    <div class="glow-line"></div>
+    <div class="slide-num-indicator">07 / 25</div>
+  </div>
+
+  <!-- ═══ SLIDE 8 — 1,8-CINEOLE INTRODUCTION ═══ -->
+  <div class="slide" id="slide-8">
+    <div class="orb orb-green" style="width:450px;height:350px;top:-5%;right:-5%;"></div>
+    <div class="slide-content">
+      <div class="two-col" style="height:calc(100vh - 12vh);">
+        <div style="display:flex;flex-direction:column;gap:1.2rem;">
+          <div>
+            <div class="section-label rev">Compound 01</div>
+            <div class="display-sm rev" style="transition-delay:0.1s;">1,8-Cineole<br><span class="text-green">(Eucalyptol)</span></div>
+          </div>
+          <div class="bullet-row rev" style="transition-delay:0.2s;"><span class="bi"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c1)"><path d="M6 18L14 6"/><path d="M6 18h12"/><path d="M9 12h6"/><circle cx="14" cy="6" r="2"/></svg></span><div class="body"><strong style="color:var(--c1);">Natural organic compound</strong> classified as a monoterpene ether</div></div>
+          <div class="bullet-row rev" style="transition-delay:0.27s;"><span class="bi"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c1)"><path d="M2 15c6.667-6 13.333 0 20-6"/><path d="M9 22c1.798-3.2 5.2-3.2 7 0"/><path d="M9 2C10.798 5.2 14.2 5.2 16 2"/><path d="M2 9c6.667 6 13.333 0 20 6"/></svg></span><div class="body">Molecular formula: <strong style="color:var(--c2);font-family:var(--ff-mono);">C₁₀H₁₈O</strong> — one of the major components in many essential oils</div></div>
+          <div class="bullet-row rev" style="transition-delay:0.34s;"><span class="bi"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c1)"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg></span><div class="body">Occurs naturally in <strong style="color:var(--c1);">eucalyptus, Artemisia, and rosemary</strong></div></div>
+          <div class="bullet-row rev" style="transition-delay:0.41s;"><span class="bi"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c1)"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/></svg></span><div class="body"><strong style="color:var(--c1);">Colorless, volatile liquid</strong> with low solubility in water</div></div>
+          <div class="bullet-row rev" style="transition-delay:0.48s;"><span class="bi"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c1)"><path d="M6 6C6 4.4 7.6 3 9.5 3c.5 0 .9.1 1.3.3L12 4"/><path d="M12 4v9"/><path d="M18 6C18 4.4 16.4 3 14.5 3c-.5 0-.9.1-1.3.3L12 4"/><path d="M6 6c-2.2.8-4 3.3-4 6.5C2 16.5 4.7 20 8 20c1.5 0 2.8-.6 3.8-1.5"/><path d="M18 6c2.2.8 4 3.3 4 6.5C22 16.5 19.3 20 16 20c-1.5 0-2.8-.6-3.8-1.5"/><path d="M9 13a3 3 0 1 0 6 0"/></svg></span><div class="body">Important bioactive compound due to its notable effects, especially on the <strong style="color:var(--c1);">respiratory system</strong></div></div>
+          <div class="bullet-row rev" style="transition-delay:0.55s;"><span class="bi"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c1)"><circle cx="12" cy="12" r="3"/><path d="M12 2a4 4 0 0 1 0 8 4 4 0 0 1 0-8zm0 12a4 4 0 0 1 0 8 4 4 0 0 1 0-8zm-8-6a4 4 0 0 1 8 0 4 4 0 0 1-8 0zm12 0a4 4 0 0 1 8 0 4 4 0 0 1-8 0z"/></svg></span><div class="body">Characteristic <strong style="color:var(--c1);">fresh, eucalyptus-like aroma</strong> — widely used in pharmaceutical and aromatic applications</div></div>
+        </div>
+        <div class="rev-r glass" style="padding:1.8rem;transition-delay:0.2s;">
+          <div class="caption" style="letter-spacing:0.2em;color:var(--c1);margin-bottom:1.2rem;">COMPOUND PROFILE</div>
+          <div style="text-align:center;margin-bottom:1.4rem;">
+            <div style="font-family:var(--ff-mono);font-size:2rem;color:var(--c1);font-weight:500;">C₁₀H₁₈O</div>
+            <div class="caption">1,8-Cineole · Eucalyptol</div>
+          </div>
+          <div class="prop-row"><span class="pr-k">Class</span><span class="pr-v">Monoterpene Ether</span></div>
+          <div class="prop-row"><span class="pr-k">Molecular Weight</span><span class="pr-v">154.25 g/mol</span></div>
+          <div class="prop-row"><span class="pr-k">Appearance</span><span class="pr-v">Colorless liquid</span></div>
+          <div class="prop-row"><span class="pr-k">Solubility</span><span class="pr-v">Low in water</span></div>
+          <div class="prop-row"><span class="pr-k">Boiling Point</span><span class="pr-v">~176–177 °C</span></div>
+          <div class="prop-row"><span class="pr-k">Aroma</span><span class="pr-v">Fresh eucalyptus-like</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="glow-line"></div>
+    <div class="slide-num-indicator">08 / 25</div>
+  </div>
+
+  <!-- ═══ SLIDE 9 — MEDICAL USES OF 1,8-CINEOLE ═══ -->
+  <div class="slide" id="slide-9">
+    <div class="orb orb-lime" style="width:400px;height:400px;bottom:-10%;left:-5%;"></div>
+    <div class="slide-content">
+      <div style="margin-bottom:1.5rem;">
+        <div class="section-label rev">Therapeutic Applications</div>
+        <div class="display-sm rev" style="transition-delay:0.1s;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c1)"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="m8.5 8.5 7 7"/></svg> Medical Uses of<br><span class="grad-green">1,8-Cineole (Eucalyptol)</span></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.8rem;flex:1;align-items:start;">
+        <div class="list-item rev" style="transition-delay:0.12s;"><span class="li-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c1)"><path d="M6 6C6 4.4 7.6 3 9.5 3c.5 0 .9.1 1.3.3L12 4"/><path d="M12 4v9"/><path d="M18 6C18 4.4 16.4 3 14.5 3c-.5 0-.9.1-1.3.3L12 4"/><path d="M6 6c-2.2.8-4 3.3-4 6.5C2 16.5 4.7 20 8 20c1.5 0 2.8-.6 3.8-1.5"/><path d="M18 6c2.2.8 4 3.3 4 6.5C22 16.5 19.3 20 16 20c-1.5 0-2.8-.6-3.8-1.5"/><path d="M9 13a3 3 0 1 0 6 0"/></svg></span><div><div class="li-title">Respiratory System Support</div><div class="li-text">Used to treat cough, bronchitis, asthma, and sinus congestion by helping open airways and ease breathing</div></div></div>
+        <div class="list-item rev" style="transition-delay:0.2s;border-left-color:var(--c3);"><span class="li-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c1)"><ellipse cx="12" cy="13" rx="9" ry="5"/><path d="M3 13v3c0 2.8 4 5 9 5s9-2.2 9-5v-3"/><path d="M3 10c0-2.8 4-5 9-5s9 2.2 9 5"/></svg></span><div><div class="li-title" style="color:var(--c3);">Mucolytic Action</div><div class="li-text">Helps break down and remove mucus from the lungs, making it easier to clear phlegm</div></div></div>
+        <div class="list-item rev" style="transition-delay:0.28s;border-left-color:var(--c4);"><span class="li-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c4)"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg></span><div><div class="li-title" style="color:var(--c4);">Anti-inflammatory Effects</div><div class="li-text">Reduces inflammation in the respiratory tract and may help relieve symptoms of infections</div></div></div>
+        <div class="list-item rev" style="transition-delay:0.36s;border-left-color:#00c8c6;"><span class="li-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c1)"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2m-3.5-7.5-1.5 1.5m-9 9-1.5 1.5m13.5 0-1.5-1.5m-9-9-1.5-1.5"/></svg></span><div><div class="li-title" style="color:#00c8c6;">Antimicrobial Activity</div><div class="li-text">Has antibacterial and antifungal properties that help fight infections</div></div></div>
+        <div class="list-item rev" style="transition-delay:0.44s;border-left-color:#64b8c8;"><span class="li-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c1)"><circle cx="12" cy="8" r="4"/><path d="M8 8H3l2 8h2l1-4h8l1 4h2l2-8h-5"/></svg></span><div><div class="li-title" style="color:#64b8c8;">Pain Relief (Mild Analgesic)</div><div class="li-text">Can help reduce mild pain when used in topical preparations like balms and ointments</div></div></div>
+        <div class="list-item rev" style="transition-delay:0.52s;border-left-color:#7dd3da;"><span class="li-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c1)"><path d="M17.7 7.7a2.5 2.5 0 1 1 1.8 4.3H2"/><path d="M9.6 4.6A2 2 0 1 1 11 8H2"/><path d="M12.6 19.4A2 2 0 1 0 14 16H2"/></svg></span><div><div class="li-title" style="color:#7dd3da;">Aromatherapy Use</div><div class="li-text">Used in inhalation therapy to relieve nasal blockage, headaches, and stress</div></div></div>
+      </div>
+      <div class="glass rev" style="padding:0.8rem 1.6rem;margin-top:0.8rem;transition-delay:0.6s;">
+        <div class="body" style="font-size:0.8rem;"><strong style="color:var(--c1);">Oral health:</strong> Included in mouthwashes for its antibacterial and refreshing effects</div>
+      </div>
+    </div>
+    <div class="glow-line"></div>
+    <div class="slide-num-indicator">09 / 25</div>
+  </div>
+
+  <!-- ═══ SLIDE 10 — 1,8-CINEOLE IN DIABETES ═══ -->
+  <div class="slide" id="slide-10">
+    <div class="orb orb-amber" style="width:380px;height:380px;top:-5%;right:5%;"></div>
+    <div class="slide-content">
+      <div style="margin-bottom:1.8rem;">
+        <div class="section-label rev">Diabetes & Metabolic Health</div>
+        <div class="display-sm rev" style="transition-delay:0.1s;">Medical Uses of 1,8-Cineole<br><span class="text-green">— especially in Diabetes</span></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1.2fr 0.8fr;gap:4vw;flex:1;align-items:center;">
+        <div style="display:flex;flex-direction:column;gap:0.7rem;">
+          <div class="list-item rev" style="transition-delay:0.15s;"><span class="li-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c1)"><path d="M12 2L6 14a6 6 0 1 0 12 0L12 2z"/></svg></span><div><div class="li-title">Reduces Diabetes-related Inflammation</div><div class="li-text">Helps reduce inflammation associated with diabetes complications</div></div></div>
+          <div class="list-item rev" style="transition-delay:0.22s;border-left-color:var(--c3);"><span class="li-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c1)"><path d="M9 3h6v8l3.5 8H5.5L9 11z"/><path d="M3 3h18"/></svg></span><div><div class="li-title" style="color:var(--c3);">Antioxidant Protection</div><div class="li-text">Acts as an antioxidant, reducing cellular damage caused by high blood sugar</div></div></div>
+          <div class="list-item rev" style="transition-delay:0.29s;border-left-color:var(--c4);"><span class="li-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c1)"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/></svg></span><div><div class="li-title" style="color:var(--c4);">Glucose Metabolism Support</div><div class="li-text">May indirectly support glucose metabolism and blood sugar regulation — but is NOT a primary treatment</div></div></div>
+          <div class="list-item rev" style="transition-delay:0.36s;border-left-color:#64b8c8;"><span class="li-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c1)"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span><div><div class="li-title" style="color:#64b8c8;">Tissue & Nerve Protection</div><div class="li-text">Helps protect tissues and nerves from long-term diabetic complications</div></div></div>
+          <div class="list-item rev" style="transition-delay:0.43s;border-left-color:#7dd3da;"><span class="li-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c1)"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg></span><div><div class="li-title" style="color:#7dd3da);">Circulation Improvement</div><div class="li-text">Improves blood circulation, which is beneficial for diabetic patients</div></div></div>
+          <div class="list-item rev" style="transition-delay:0.50s;border-left-color:#00c8c6;"><span class="li-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c1)"><path d="M6 6C6 4.4 7.6 3 9.5 3c.5 0 .9.1 1.3.3L12 4"/><path d="M12 4v9"/><path d="M18 6C18 4.4 16.4 3 14.5 3c-.5 0-.9.1-1.3.3L12 4"/><path d="M6 6c-2.2.8-4 3.3-4 6.5C2 16.5 4.7 20 8 20c1.5 0 2.8-.6 3.8-1.5"/><path d="M18 6c2.2.8 4 3.3 4 6.5C22 16.5 19.3 20 16 20c-1.5 0-2.8-.6-3.8-1.5"/><path d="M9 13a3 3 0 1 0 6 0"/></svg></span><div><div class="li-title" style="color:#00c8c6;">Respiratory Health</div><div class="li-text">Supports respiratory health due to its antimicrobial properties</div></div></div>
+        </div>
+        <div class="rev-r glass-amber" style="padding:1.8rem;transition-delay:0.25s;">
+          <div class="caption" style="letter-spacing:0.18em;color:var(--c4);margin-bottom:1rem;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c4)"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> IMPORTANT NOTE</div>
+          <div class="body" style="font-size:0.82rem;margin-bottom:1.2rem;">1,8-Cineole shows supportive effects for diabetes, but must be used with awareness:</div>
+          <div style="padding:0.8rem;border-radius:8px;background:rgba(128,223,224,0.06);border:1px solid rgba(128,223,224,0.12);font-size:0.76rem;color:var(--text2);margin-bottom:0.5rem;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c4)"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><line x1="12" y1="11" x2="16" y2="11"/><line x1="12" y1="16" x2="16" y2="16"/><line x1="8" y1="11" x2="8.01" y2="11"/><line x1="8" y1="16" x2="8.01" y2="16"/></svg> Not a replacement for diabetes medications</div>
+          <div style="padding:0.8rem;border-radius:8px;background:rgba(128,223,224,0.06);border:1px solid rgba(128,223,224,0.12);font-size:0.76rem;color:var(--text2);"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c4)"><path d="M11 2a2 2 0 0 0-2 2v5H6a2 2 0 0 0 0 4h3v3a6 6 0 1 0 4 0v-3h3a2 2 0 0 0 0-4h-3V4a2 2 0 0 0-2-2z"/></svg> Always consult a physician before use</div>
+        </div>
+      </div>
+    </div>
+    <div class="glow-line"></div>
+    <div class="slide-num-indicator">10 / 25</div>
+  </div>
+
+  <!-- ═══ SLIDE 11 — SIDE EFFECTS & PRECAUTIONS (CINEOLE) ═══ -->
+  <div class="slide" id="slide-11">
+    <div class="orb orb-amber" style="width:400px;height:400px;bottom:-10%;right:-5%;"></div>
+    <div class="slide-content">
+      <div style="margin-bottom:2rem;">
+        <div class="section-label rev">Safety Information</div>
+        <div class="display-sm rev" style="transition-delay:0.1s;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c4)"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Side Effects and<br><span class="text-amber">Precautions — Cineole</span></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:2vw;flex:1;align-items:start;">
+        <div style="display:flex;flex-direction:column;gap:1rem;">
+          <div class="glass-bright rev" style="padding:1.4rem;transition-delay:0.15s;">
+            <div class="caption" style="color:var(--c1);letter-spacing:0.2em;margin-bottom:0.8rem;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c1)"><polyline points="20,6 9,17 4,12"/></svg> GENERALLY SAFE</div>
+            <div class="body" style="font-size:0.84rem;">1,8-Cineole is <strong style="color:var(--c1);">generally safe when used in moderate doses</strong>. It has a well-established safety profile when consumed at appropriate therapeutic amounts.</div>
+          </div>
+          <div class="glass-amber rev" style="padding:1.4rem;transition-delay:0.25s;">
+            <div class="caption" style="color:var(--c4);letter-spacing:0.2em;margin-bottom:0.8rem;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c4)"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> MAY CAUSE</div>
+            <div style="display:flex;flex-direction:column;gap:0.5rem;">
+              <div style="display:flex;align-items:center;gap:0.6rem;font-size:0.82rem;color:var(--text2);"><span><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c4)"><circle cx="12" cy="12" r="10"/><path d="M12 8v5"/><circle cx="12" cy="16" r="0.5" fill="currentColor"/></svg></span> Mild stomach irritation</div>
+              <div style="display:flex;align-items:center;gap:0.6rem;font-size:0.82rem;color:var(--text2);"><span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c4)"><circle cx="12" cy="10" r="8"/><path d="M12 6v4"/><path d="M8 14s1 2 4 2 4-2 4-2"/></svg></span> Allergic reactions in some individuals</div>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:1rem;">
+          <div class="glass-amber rev" style="padding:1.4rem;transition-delay:0.35s;">
+            <div class="caption" style="color:var(--c4);letter-spacing:0.2em;margin-bottom:0.8rem;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c4)"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg> AVOID HIGH DOSES</div>
+            <div class="body" style="font-size:0.82rem;">High doses should be avoided as they may increase the risk of adverse effects and toxicity.</div>
+          </div>
+          <div class="glass-amber rev" style="padding:1.4rem;transition-delay:0.45s;">
+            <div class="caption" style="color:var(--c4);letter-spacing:0.2em;margin-bottom:0.8rem;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c4)"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> USE WITH CAUTION</div>
+            <div style="display:flex;flex-direction:column;gap:0.6rem;">
+              <div style="display:flex;align-items:center;gap:0.6rem;font-size:0.82rem;color:var(--text2);"><span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c4)"><circle cx="12" cy="7" r="4"/><path d="M5.6 20.5c.5-2 2.5-4.5 6.4-4.5s5.9 2.5 6.4 4.5"/></svg></span> <strong style="color:var(--c4);">Young children</strong> — use with extra care</div>
+              <div style="display:flex;align-items:center;gap:0.6rem;font-size:0.82rem;color:var(--text2);"><span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c4)"><circle cx="12" cy="5" r="3"/><path d="M7 22c0-4.4 2-7 5-7s5 2.6 5 7"/><path d="M10 13c-.3 2-1 3-1 3h6s-.7-1-1-3"/></svg></span> <strong style="color:var(--c4);">Pregnant women</strong> — medical advice is recommended before use</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="glow-line"></div>
+    <div class="slide-num-indicator">11 / 25</div>
+  </div>
+
+  <!-- ═══ SLIDE 12 — PHYSICAL & CHEMICAL PROPERTIES OF CINEOLE ═══ -->
+  <div class="slide" id="slide-12">
+    <div class="orb orb-green" style="width:380px;height:380px;top:-5%;right:-5%;"></div>
+    <div class="slide-content">
+      <div style="margin-bottom:1.8rem;">
+        <div class="section-label rev">Properties</div>
+        <div class="display-sm rev" style="transition-delay:0.1s;">Physical & Chemical Properties of<br><span class="text-green">1,8-Cineole (Eucalyptol)</span></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:2vw;flex:1;align-items:start;">
+        <div class="rev" style="transition-delay:0.15s;padding:1.6rem;border-radius:16px;background:rgba(0,18,24,0.7);border:1px solid rgba(0,183,181,0.15);">
+          <div style="display:flex;align-items:center;gap:0.8rem;margin-bottom:1rem;">
+            <span style="font-size:1.5rem;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c1)"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/></svg></span>
+            <div style="font-family:var(--ff-display);font-weight:700;font-size:1rem;color:var(--c1);">Physical Properties</div>
+          </div>
+          <div class="prop-row"><span class="pr-k">Appearance</span><span class="pr-v">Colorless liquid</span></div>
+          <div class="prop-row"><span class="pr-k">Odor</span><span class="pr-v">Strong eucalyptus-like</span></div>
+          <div class="prop-row"><span class="pr-k">Volatility</span><span class="pr-v">Volatile (evaporates easily)</span></div>
+          <div class="prop-row"><span class="pr-k">Boiling Point</span><span class="pr-v">~176–177 °C</span></div>
+          <div class="prop-row"><span class="pr-k">Water Solubility</span><span class="pr-v">Poorly soluble</span></div>
+          <div class="prop-row"><span class="pr-k">Organic Solvents</span><span class="pr-v">Soluble</span></div>
+          <div class="prop-row"><span class="pr-k">Density</span><span class="pr-v">Lower than water</span></div>
+        </div>
+        <div class="rev" style="transition-delay:0.25s;padding:1.6rem;border-radius:16px;background:rgba(0,18,24,0.7);border:1px solid rgba(0,212,209,0.15);">
+          <div style="display:flex;align-items:center;gap:0.8rem;margin-bottom:1rem;">
+            <span style="font-size:1.5rem;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c1)"><path d="M9 3h6v8l3.5 8H5.5L9 11z"/><path d="M3 3h18"/></svg></span>
+            <div style="font-family:var(--ff-display);font-weight:700;font-size:1rem;color:var(--c3);">Chemical Properties</div>
+          </div>
+          <div class="prop-row" style="border-bottom-color:rgba(0,212,209,0.07);"><span class="pr-k">Class</span><span class="pr-v" style="color:var(--c3);">Monoterpene Ether</span></div>
+          <div class="prop-row" style="border-bottom-color:rgba(0,212,209,0.07);"><span class="pr-k">Formula</span><span class="pr-v" style="color:var(--c3);">C₁₀H₁₈O</span></div>
+          <div class="prop-row" style="border-bottom-color:rgba(0,212,209,0.07);"><span class="pr-k">Functional Group</span><span class="pr-v" style="color:var(--c3);">Ether oxygen (–O–)</span></div>
+          <div class="prop-row" style="border-bottom-color:rgba(0,212,209,0.07);"><span class="pr-k">Stability</span><span class="pr-v" style="color:var(--c3);">Stable under normal conditions</span></div>
+          <div class="prop-row" style="border-bottom-color:rgba(0,212,209,0.07);"><span class="pr-k">Oxidation</span><span class="pr-v" style="color:var(--c3);">Can oxidize under strong conditions</span></div>
+          <div class="prop-row" style="border-bottom-color:rgba(0,212,209,0.07);"><span class="pr-k">Structure</span><span class="pr-v" style="color:var(--c3);">Bicyclic framework</span></div>
+          <div class="prop-row" style="border-bottom-color:none;"><span class="pr-k">Found in</span><span class="pr-v" style="color:var(--c3);">Essential oils</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="glow-line"></div>
+    <div class="slide-num-indicator">12 / 25</div>
+  </div>
+
+  <!-- ═══ SLIDE 13 — CONCLUSION (CINEOLE) ═══ -->
+  <div class="slide" id="slide-13">
+    <div class="orb orb-green" style="width:450px;height:450px;top:50%;left:-10%;transform:translateY(-50%);"></div>
+    <div class="slide-content">
+      <div style="margin-bottom:2rem;">
+        <div class="section-label rev">Summary — Part 1</div>
+        <div class="display-sm rev" style="transition-delay:0.1s;">Conclusion:<br><span class="grad-green">Artemisia & 1,8-Cineole</span></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:1rem;flex:1;justify-content:center;">
+        <div class="list-item rev" style="transition-delay:0.15s;"><span class="li-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c1)"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg></span><div><div class="li-title">Rich Bioactive Compounds</div><div class="li-text">Artemisia essential oil contains important bioactive compounds, mainly <strong style="color:var(--c1);">1,8-cineole, α-thujone, and β-thujone</strong></div></div></div>
+        <div class="list-item rev" style="transition-delay:0.25s;border-left-color:var(--c3);"><span class="li-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c1)"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="m8.5 8.5 7 7"/></svg></span><div><div class="li-title" style="color:var(--c3);">Well-known Medical Benefits</div><div class="li-text">1,8-Cineole has well-known <strong style="color:var(--c3);">anti-inflammatory, antioxidant, and respiratory benefits</strong></div></div></div>
+        <div class="list-item rev" style="transition-delay:0.35s;border-left-color:var(--c4);"><span class="li-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c4)"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span><div><div class="li-title" style="color:var(--c4);">Thujone Caution</div><div class="li-text">Thujones show biological activity but may be <strong style="color:var(--c4);">toxic at high doses</strong>, especially α-thujone due to its effects on the nervous system</div></div></div>
+        <div class="list-item rev" style="transition-delay:0.45s;border-left-color:#00c8c6;"><span class="li-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c1)"><path d="M6 18L14 6"/><path d="M6 18h12"/><path d="M9 12h6"/><circle cx="14" cy="6" r="2"/></svg></span><div><div class="li-title" style="color:#00c8c6;">Extraction Method</div><div class="li-text">The oil is typically obtained by <strong style="color:#00c8c6;">steam distillation</strong> and is used as a <strong style="color:#00c8c6;">supportive medicinal agent, not a primary treatment</strong></div></div></div>
+        <div class="list-item rev" style="transition-delay:0.55s;border-left-color:#64b8c8;"><span class="li-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c1)"><polyline points="16,2 12,6 8,2"/><line x1="12" y1="6" x2="12" y2="22"/><path d="M20 17H4M17 8l-5 9M7 8l5 9"/></svg></span><div><div class="li-title" style="color:#64b8c8;">Controlled Use Required</div><div class="li-text">Artemisia oil has therapeutic potential, but its use must be <strong style="color:#64b8c8;">carefully controlled</strong> because of possible toxicity and variation in concentration</div></div></div>
+      </div>
+    </div>
+    <div class="glow-line"></div>
+    <div class="slide-num-indicator">13 / 25</div>
+  </div>
+
+  <!-- ═══ SLIDE 14 — ALPHA-THUJONE INTRODUCTION ═══ -->
+  <div class="slide" id="slide-14">
+    <div class="orb orb-lime" style="width:450px;height:350px;top:-5%;right:-5%;"></div>
+    <div class="slide-content">
+      <div class="two-col" style="height:calc(100vh - 12vh);">
+        <div style="display:flex;flex-direction:column;gap:1.2rem;">
+          <div>
+            <div class="section-label rev">Compound 02</div>
+            <div class="display-sm rev" style="transition-delay:0.1s;"><span class="text-lime">Alpha-Thujone</span><br>(α-Thujone)</div>
+          </div>
+          <div class="body rev" style="transition-delay:0.2s;">Alpha-Thujone is a naturally occurring <strong style="color:var(--c3);">monoterpene ketone</strong> found in the essential oils of plants such as wormwood and sage.</div>
+          <div class="bullet-row rev" style="transition-delay:0.27s;border-color:rgba(0,212,209,0.15);background:rgba(0,212,209,0.04);"><span class="bi"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c1)"><circle cx="12" cy="12" r="3"/><path d="M12 2a4 4 0 0 1 0 8 4 4 0 0 1 0-8zm0 12a4 4 0 0 1 0 8 4 4 0 0 1 0-8zm-8-6a4 4 0 0 1 8 0 4 4 0 0 1-8 0zm12 0a4 4 0 0 1 8 0 4 4 0 0 1-8 0z"/></svg></span><div class="body"><strong style="color:var(--c3);">Strong herbal aroma</strong> with notable biological effects on the nervous system</div></div>
+          <div class="bullet-row rev" style="transition-delay:0.34s;border-color:rgba(0,212,209,0.15);background:rgba(0,212,209,0.04);"><span class="bi"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c1)"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></span><div class="body"><strong style="color:var(--c3);">Bicyclic monoterpene ring</strong> containing a ketone functional group (C=O)</div></div>
+          <div class="bullet-row rev" style="transition-delay:0.41s;border-color:rgba(0,212,209,0.15);background:rgba(0,212,209,0.04);"><span class="bi"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c1)"><path d="M9.5 2h5l1 5H8.5z"/><path d="M8 7h8l2 14H6L8 7z"/><path d="M10 13c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2-2-.9-2-2z"/></svg></span><div class="body">Commonly used in <strong style="color:var(--c3);">herbal products, perfumes, and scientific research</strong></div></div>
+          <div class="bullet-row rev" style="transition-delay:0.48s;border-color:rgba(0,212,209,0.15);background:rgba(0,212,209,0.04);"><span class="bi"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c1)"><path d="M9 3h6v8l3.5 8H5.5L9 11z"/><path d="M3 3h18"/></svg></span><div class="body">Obtained from <strong style="color:var(--c3);">Artemisia absinthium</strong> using steam distillation</div></div>
+        </div>
+        <div class="rev-r" style="transition-delay:0.2s;padding:1.8rem;border-radius:16px;background:rgba(0,18,24,0.7);border:1px solid rgba(0,212,209,0.2);">
+          <div class="caption" style="letter-spacing:0.2em;color:var(--c3);margin-bottom:1.2rem;">COMPOUND PROFILE</div>
+          <div style="text-align:center;margin-bottom:1.4rem;">
+            <div style="font-family:var(--ff-mono);font-size:2rem;color:var(--c3);font-weight:500;">C₁₀H₁₆O</div>
+            <div class="caption">Alpha-Thujone</div>
+          </div>
+          <div class="prop-row" style="border-bottom-color:rgba(0,212,209,0.1);"><span class="pr-k">Class</span><span class="pr-v" style="color:var(--c3);">Monoterpene Ketone</span></div>
+          <div class="prop-row" style="border-bottom-color:rgba(0,212,209,0.1);"><span class="pr-k">Mol. Weight</span><span class="pr-v" style="color:var(--c3);">~152.23 g/mol</span></div>
+          <div class="prop-row" style="border-bottom-color:rgba(0,212,209,0.1);"><span class="pr-k">Structure</span><span class="pr-v" style="color:var(--c3);">Bicyclic</span></div>
+          <div class="prop-row" style="border-bottom-color:rgba(0,212,209,0.1);"><span class="pr-k">Functional Group</span><span class="pr-v" style="color:var(--c3);">Ketone (C=O)</span></div>
+          <div class="prop-row" style="border-bottom-color:rgba(0,212,209,0.1);"><span class="pr-k">Source Plant</span><span class="pr-v" style="color:var(--c3);">Wormwood, Sage</span></div>
+          <div class="prop-row"><span class="pr-k">Isomers</span><span class="pr-v" style="color:var(--c3);">α and β forms</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="glow-line"></div>
+    <div class="slide-num-indicator">14 / 25</div>
+  </div>
+
+  <!-- ═══ SLIDE 15 — MEDICAL USES OF ALPHA-THUJONE ═══ -->
+  <div class="slide" id="slide-15">
+    <div class="orb orb-lime" style="width:400px;height:400px;bottom:-10%;right:-5%;"></div>
+    <div class="slide-content">
+      <div style="margin-bottom:1.8rem;">
+        <div class="section-label rev">Therapeutic Applications</div>
+        <div class="display-sm rev" style="transition-delay:0.1s;">Medical Properties & Uses<br><span class="text-lime">of Alpha-Thujone</span></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.8rem;flex:1;align-items:start;">
+        <div class="list-item rev" style="transition-delay:0.12s;border-left-color:var(--c3);"><span class="li-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c1)"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2m-3.5-7.5-1.5 1.5m-9 9-1.5 1.5m13.5 0-1.5-1.5m-9-9-1.5-1.5"/></svg></span><div><div class="li-title" style="color:var(--c3);">Antimicrobial Activity</div><div class="li-text">Has antimicrobial activity against some bacteria and fungi</div></div></div>
+        <div class="list-item rev" style="transition-delay:0.2s;border-left-color:var(--c3);"><span class="li-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c4)"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg></span><div><div class="li-title" style="color:var(--c3);">Anti-inflammatory</div><div class="li-text">Possesses anti-inflammatory properties that may help reduce pain and swelling</div></div></div>
+        <div class="list-item rev" style="transition-delay:0.28s;border-left-color:var(--c3);"><span class="li-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c1)"><path d="M9 3h6v8l3.5 8H5.5L9 11z"/><path d="M3 3h18"/></svg></span><div><div class="li-title" style="color:var(--c3);">Antioxidant</div><div class="li-text">Acts as an antioxidant that helps protect cells from oxidative damage</div></div></div>
+        <div class="list-item rev" style="transition-delay:0.36s;border-left-color:var(--c3);"><span class="li-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c1)"><circle cx="12" cy="4" r="2"/><path d="M12 7c-2 0-4 1-4 4v3l-2 6h12l-2-6v-3c0-3-2-4-4-4z"/></svg></span><div><div class="li-title" style="color:var(--c3);">Digestive Aid</div><div class="li-text">May aid in relieving digestive disorders and improving digestion</div></div></div>
+        <div class="list-item rev" style="transition-delay:0.44s;border-left-color:var(--c3);"><span class="li-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c1)"><path d="M11.162 4.338 12 6l.838-1.662A2 2 0 0 1 15.578 4h.172a2 2 0 0 1 1.94 1.515l.196.784A2 2 0 0 0 19.828 8H21a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1h-5.764a2 2 0 0 1-1.789-1.106L12 8l-1.447 2.894A2 2 0 0 1 8.764 12H3a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1h1.172a2 2 0 0 0 1.942-1.701l.196-.784A2 2 0 0 1 8.25 4h.172a2 2 0 0 1 1.74 1"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg></span><div><div class="li-title" style="color:var(--c3);">Pain Relief</div><div class="li-text">Used in some herbal and aromatic products to relieve muscle and joint pain</div></div></div>
+        <div class="list-item rev" style="transition-delay:0.52s;border-left-color:var(--c3);"><span class="li-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c1)"><path d="M6 6C6 4.4 7.6 3 9.5 3c.5 0 .9.1 1.3.3L12 4"/><path d="M12 4v9"/><path d="M18 6C18 4.4 16.4 3 14.5 3c-.5 0-.9.1-1.3.3L12 4"/><path d="M6 6c-2.2.8-4 3.3-4 6.5C2 16.5 4.7 20 8 20c1.5 0 2.8-.6 3.8-1.5"/><path d="M18 6c2.2.8 4 3.3 4 6.5C22 16.5 19.3 20 16 20c-1.5 0-2.8-.6-3.8-1.5"/><path d="M9 13a3 3 0 1 0 6 0"/></svg></span><div><div class="li-title" style="color:var(--c3);">Respiratory Support</div><div class="li-text">May support respiratory health in certain herbal preparations</div></div></div>
+      </div>
+      <div class="glass-amber rev" style="padding:0.9rem 1.4rem;margin-top:0.8rem;transition-delay:0.6s;">
+        <div class="body" style="font-size:0.8rem;"><span style="color:var(--c4);"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c4)"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Warning:</span> Should be used carefully because <strong style="color:var(--c4);">high doses may affect the nervous system and cause toxicity</strong></div>
+      </div>
+    </div>
+    <div class="glow-line"></div>
+    <div class="slide-num-indicator">15 / 25</div>
+  </div>
+
+  <!-- ═══ SLIDE 16 — SIDE EFFECTS OF ALPHA-THUJONE ═══ -->
+  <div class="slide" id="slide-16">
+    <div class="orb orb-amber" style="width:400px;height:400px;top:-5%;right:-5%;"></div>
+    <div class="slide-content">
+      <div style="margin-bottom:1.8rem;">
+        <div class="section-label rev">Safety Information</div>
+        <div class="display-sm rev" style="transition-delay:0.1s;">Side Effects of<br><span class="text-amber">Alpha-Thujone</span></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.9rem;flex:1;align-items:start;">
+        <div class="info-card rev" style="transition-delay:0.12s;border-color:rgba(128,223,224,0.12);">
+          <div class="ic-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c4)"><circle cx="12" cy="12" r="10"/><line x1="8" y1="8" x2="16" y2="16"/><line x1="16" y1="8" x2="8" y2="16"/></svg></div>
+          <div class="ic-title" style="color:var(--c4);">CNS Effects</div>
+          <div class="ic-body">Dizziness and headache — common early signs of thujone exposure</div>
+        </div>
+        <div class="info-card rev" style="transition-delay:0.2s;border-color:rgba(128,223,224,0.12);">
+          <div class="ic-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c4)"><circle cx="12" cy="12" r="10"/><path d="M12 8v5"/><circle cx="12" cy="16" r="0.5" fill="currentColor"/></svg></div>
+          <div class="ic-title" style="color:var(--c4);">GI Distress</div>
+          <div class="ic-body">Nausea and stomach irritation may occur, especially with oral consumption</div>
+        </div>
+        <div class="info-card rev" style="transition-delay:0.28s;border-color:rgba(128,223,224,0.12);">
+          <div class="ic-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c4)"><circle cx="12" cy="12" r="10"/><path d="M8 15s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg></div>
+          <div class="ic-title" style="color:var(--c4);">Nervousness</div>
+          <div class="ic-body">Nervousness and restlessness — psychological/neurological reactions</div>
+        </div>
+        <div class="info-card rev" style="transition-delay:0.36s;border-color:rgba(128,223,224,0.2);background:rgba(0,20,26,0.8);">
+          <div class="ic-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c4)"><polygon points="13,2 3,14 12,14 11,22 21,10 12,10"/></svg></div>
+          <div class="ic-title" style="color:var(--c4);">Seizures (High Doses)</div>
+          <div class="ic-body">Muscle spasms or seizures at <strong>high doses</strong> — serious neurological risk</div>
+        </div>
+        <div class="info-card rev" style="transition-delay:0.44s;border-color:rgba(128,223,224,0.12);">
+          <div class="ic-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c4)"><path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96-.46 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2Z"/><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96-.46 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2Z"/></svg></div>
+          <div class="ic-title" style="color:var(--c4);">Cognitive Effects</div>
+          <div class="ic-body">Confusion or difficulty concentrating — impaired mental function</div>
+        </div>
+        <div class="info-card rev" style="transition-delay:0.52s;border-color:rgba(128,223,224,0.12);">
+          <div class="ic-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c1)"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg></div>
+          <div class="ic-title" style="color:var(--c4);">Organ Stress</div>
+          <div class="ic-body">Possible nervous system toxicity if consumed excessively; liver stress with long-term high use; allergic reactions in sensitive individuals</div>
+        </div>
+      </div>
+    </div>
+    <div class="glow-line"></div>
+    <div class="slide-num-indicator">16 / 25</div>
+  </div>
+
+  <!-- ═══ SLIDE 17 — CHEMICAL & PHYSICAL PROPERTIES OF ALPHA-THUJONE ═══ -->
+  <div class="slide" id="slide-17">
+    <div class="orb orb-lime" style="width:380px;height:380px;bottom:-5%;left:-5%;"></div>
+    <div class="slide-content">
+      <div style="margin-bottom:1.8rem;">
+        <div class="section-label rev">Properties</div>
+        <div class="display-sm rev" style="transition-delay:0.1s;">Chemical & Physical Properties<br><span class="text-lime">of Alpha-Thujone</span></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:2vw;flex:1;align-items:start;">
+        <div class="rev" style="transition-delay:0.15s;padding:1.6rem;border-radius:16px;background:rgba(0,18,24,0.7);border:1px solid rgba(0,212,209,0.15);">
+          <div style="display:flex;align-items:center;gap:0.8rem;margin-bottom:1rem;">
+            <span style="font-size:1.5rem;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c1)"><path d="M9 3h6v8l3.5 8H5.5L9 11z"/><path d="M3 3h18"/></svg></span>
+            <div style="font-family:var(--ff-display);font-weight:700;font-size:1rem;color:var(--c3);">Chemical Properties</div>
+          </div>
+          <div class="prop-row" style="border-bottom-color:rgba(0,212,209,0.1);"><span class="pr-k">Chemical Formula</span><span class="pr-v" style="color:var(--c3);">C₁₀H₁₆O</span></div>
+          <div class="prop-row" style="border-bottom-color:rgba(0,212,209,0.1);"><span class="pr-k">Molecular Weight</span><span class="pr-v" style="color:var(--c3);">~152.23 g/mol</span></div>
+          <div class="prop-row" style="border-bottom-color:rgba(0,212,209,0.1);"><span class="pr-k">Chemical Class</span><span class="pr-v" style="color:var(--c3);">Monoterpene Ketone</span></div>
+          <div class="prop-row" style="border-bottom-color:rgba(0,212,209,0.1);"><span class="pr-k">Structure</span><span class="pr-v" style="color:var(--c3);">Bicyclic</span></div>
+          <div class="prop-row" style="border-bottom-color:rgba(0,212,209,0.1);"><span class="pr-k">Functional Group</span><span class="pr-v" style="color:var(--c3);">Ketone (C=O)</span></div>
+          <div class="prop-row"><span class="pr-k">Natural Source</span><span class="pr-v" style="color:var(--c3);">Essential oils of plants</span></div>
+        </div>
+        <div class="rev" style="transition-delay:0.25s;padding:1.6rem;border-radius:16px;background:rgba(0,18,24,0.7);border:1px solid rgba(0,183,181,0.15);">
+          <div style="display:flex;align-items:center;gap:0.8rem;margin-bottom:1rem;">
+            <span style="font-size:1.5rem;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c1)"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/></svg></span>
+            <div style="font-family:var(--ff-display);font-weight:700;font-size:1rem;color:var(--c1);">Physical Properties</div>
+          </div>
+          <div class="prop-row"><span class="pr-k">Appearance</span><span class="pr-v">Colorless to pale yellow liquid</span></div>
+          <div class="prop-row"><span class="pr-k">Odor</span><span class="pr-v">Strong herbal and mint-like</span></div>
+          <div class="prop-row"><span class="pr-k">Water Solubility</span><span class="pr-v">Insoluble in water</span></div>
+          <div class="prop-row"><span class="pr-k">Organic Solvents</span><span class="pr-v">Soluble in oils</span></div>
+          <div class="prop-row"><span class="pr-k">Volatility</span><span class="pr-v">Volatile compound</span></div>
+          <div class="prop-row"><span class="pr-k">Aromatic Activity</span><span class="pr-v">Relatively high</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="glow-line"></div>
+    <div class="slide-num-indicator">17 / 25</div>
+  </div>
+
+  <!-- ═══ SLIDE 18 — CONCLUSION (ALPHA-THUJONE) ═══ -->
+  <div class="slide" id="slide-18">
+    <div class="orb orb-lime" style="width:450px;height:450px;top:50%;right:-10%;transform:translateY(-50%);"></div>
+    <div class="slide-content">
+      <div style="margin-bottom:2rem;">
+        <div class="section-label rev">Summary — Part 2</div>
+        <div class="display-sm rev" style="transition-delay:0.1s;">Conclusion:<br><span class="grad-green">Alpha-Thujone</span></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:1rem;flex:1;justify-content:center;">
+        <div class="list-item rev" style="transition-delay:0.15s;border-left-color:var(--c3);"><span class="li-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c1)"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg></span><div><div class="li-title" style="color:var(--c3);">Natural Origin</div><div class="li-text">Alpha-Thujone is an important natural compound extracted from <strong style="color:var(--c3);">Artemisia absinthium</strong> using the distillation method to obtain its essential oil</div></div></div>
+        <div class="list-item rev" style="transition-delay:0.25s;border-left-color:var(--c1);"><span class="li-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c1)"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="m8.5 8.5 7 7"/></svg></span><div><div class="li-title">Medicinal Properties</div><div class="li-text">Possesses several medicinal properties, including <strong style="color:var(--c1);">antimicrobial, anti-inflammatory, and antioxidant activities</strong>, making it useful in treatment and relief of various health conditions</div></div></div>
+        <div class="list-item rev" style="transition-delay:0.35s;border-left-color:var(--c4);"><span class="li-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c4)"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span><div><div class="li-title" style="color:var(--c4);">Toxicity Risk</div><div class="li-text">Despite its therapeutic benefits, it should be used carefully and in <strong style="color:var(--c4);">controlled amounts</strong> because excessive exposure may cause <strong style="color:var(--c4);">toxic effects on the nervous system</strong></div></div></div>
+        <div class="glass-bright rev" style="padding:1rem 1.8rem;transition-delay:0.45s;">
+          <div class="italic" style="color:var(--c3);font-size:0.88rem;">Alpha-Thujone is a promising but double-edged compound — its therapeutic value is matched by the need for careful dosage control.</div>
+        </div>
+      </div>
+    </div>
+    <div class="glow-line"></div>
+    <div class="slide-num-indicator">18 / 25</div>
+  </div>
+
+  <!-- ═══ SLIDE 19 — BETA-THUJONE INTRODUCTION ═══ -->
+  <div class="slide" id="slide-19">
+    <div class="orb orb-amber" style="width:450px;height:350px;top:-5%;right:-5%;"></div>
+    <div class="slide-content">
+      <div class="two-col" style="height:calc(100vh - 12vh);">
+        <div style="display:flex;flex-direction:column;gap:1.2rem;">
+          <div>
+            <div class="section-label rev">Compound 03</div>
+            <div class="display-sm rev" style="transition-delay:0.1s;"><span class="text-amber">Beta-Thujone</span><br>(β-Thujone)</div>
+          </div>
+          <div class="body rev" style="transition-delay:0.2s;">Beta-Thujone is a natural compound belonging to the <strong style="color:var(--c4);">monoterpene ketone group</strong>. It is a structural isomer of Alpha-Thujone — same chemical formula C₁₀H₁₆O but different spatial arrangement of atoms.</div>
+          <div class="bullet-row rev" style="transition-delay:0.27s;border-color:rgba(128,223,224,0.15);background:rgba(128,223,224,0.04);"><span class="bi"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c1)"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg></span><div class="body">Naturally found in essential oils of <strong style="color:var(--c4);">Artemisia absinthium</strong></div></div>
+          <div class="bullet-row rev" style="transition-delay:0.34s;border-color:rgba(128,223,224,0.15);background:rgba(128,223,224,0.04);"><span class="bi"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c1)"><path d="M6 18L14 6"/><path d="M6 18h12"/><path d="M9 12h6"/><circle cx="14" cy="6" r="2"/></svg></span><div class="body"><strong style="color:var(--c4);">Bicyclic structure</strong> with a ketone functional group (C=O)</div></div>
+          <div class="bullet-row rev" style="transition-delay:0.41s;border-color:rgba(128,223,224,0.15);background:rgba(128,223,224,0.04);"><span class="bi"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c1)"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/></svg></span><div class="body"><strong style="color:var(--c4);">Colorless to pale yellow liquid</strong> with a strong herbal odor — insoluble in water but soluble in oils and organic solvents</div></div>
+          <div class="bullet-row rev" style="transition-delay:0.48s;border-color:rgba(128,223,224,0.15);background:rgba(128,223,224,0.04);"><span class="bi"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c1)"><path d="M9 3h6v8l3.5 8H5.5L9 11z"/><path d="M3 3h18"/></svg></span><div class="body">Obtained through <strong style="color:var(--c4);">distillation</strong> — used in aromatic and herbal applications</div></div>
+        </div>
+        <div class="rev-r" style="transition-delay:0.2s;padding:1.8rem;border-radius:16px;background:rgba(0,20,26,0.7);border:1px solid rgba(128,223,224,0.2);">
+          <div class="caption" style="letter-spacing:0.2em;color:var(--c4);margin-bottom:1.2rem;">COMPOUND PROFILE</div>
+          <div style="text-align:center;margin-bottom:1.4rem;">
+            <div style="font-family:var(--ff-mono);font-size:2rem;color:var(--c4);font-weight:500;">C₁₀H₁₆O</div>
+            <div class="caption">Beta-Thujone</div>
+          </div>
+          <div class="prop-row" style="border-bottom-color:rgba(128,223,224,0.1);"><span class="pr-k">Class</span><span class="pr-v" style="color:var(--c4);">Monoterpene Ketone</span></div>
+          <div class="prop-row" style="border-bottom-color:rgba(128,223,224,0.1);"><span class="pr-k">Formula</span><span class="pr-v" style="color:var(--c4);">C₁₀H₁₆O</span></div>
+          <div class="prop-row" style="border-bottom-color:rgba(128,223,224,0.1);"><span class="pr-k">Relation to α</span><span class="pr-v" style="color:var(--c4);">Structural Isomer</span></div>
+          <div class="prop-row" style="border-bottom-color:rgba(128,223,224,0.1);"><span class="pr-k">Mol. Weight</span><span class="pr-v" style="color:var(--c4);">152.23 g/mol</span></div>
+          <div class="prop-row" style="border-bottom-color:rgba(128,223,224,0.1);"><span class="pr-k">Source</span><span class="pr-v" style="color:var(--c4);">Artemisia absinthium</span></div>
+          <div class="prop-row"><span class="pr-k">Extraction</span><span class="pr-v" style="color:var(--c4);">Steam Distillation</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="glow-line"></div>
+    <div class="slide-num-indicator">19 / 25</div>
+  </div>
+
+  <!-- ═══ SLIDE 20 — MEDICAL USES OF BETA-THUJONE ═══ -->
+  <div class="slide" id="slide-20">
+    <div class="orb orb-amber" style="width:400px;height:400px;top:-5%;left:-5%;"></div>
+    <div class="slide-content">
+      <div style="margin-bottom:1.8rem;">
+        <div class="section-label rev">Therapeutic Applications</div>
+        <div class="display-sm rev" style="transition-delay:0.1s;">Medical Benefits & Uses<br><span class="text-amber">of Beta-Thujone</span></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.8rem;flex:1;align-items:start;">
+        <div class="list-item rev" style="transition-delay:0.12s;border-left-color:var(--c4);"><span class="li-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c1)"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2m-3.5-7.5-1.5 1.5m-9 9-1.5 1.5m13.5 0-1.5-1.5m-9-9-1.5-1.5"/></svg></span><div><div class="li-title" style="color:var(--c4);">Antimicrobial Activity</div><div class="li-text">Shows antimicrobial activity against some bacteria and fungi</div></div></div>
+        <div class="list-item rev" style="transition-delay:0.2s;border-left-color:var(--c4);"><span class="li-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c4)"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg></span><div><div class="li-title" style="color:var(--c4);">Anti-inflammatory</div><div class="li-text">Has anti-inflammatory potential that may help reduce swelling and pain</div></div></div>
+        <div class="list-item rev" style="transition-delay:0.28s;border-left-color:var(--c4);"><span class="li-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c4)"><path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96-.46 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2Z"/><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96-.46 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2Z"/></svg></span><div><div class="li-title" style="color:var(--c4);">Nervous System Effects</div><div class="li-text">Exhibits bioactive effects on the nervous system in low controlled doses</div></div></div>
+        <div class="list-item rev" style="transition-delay:0.36s;border-left-color:var(--c4);"><span class="li-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c1)"><path d="M9 3h6v8l3.5 8H5.5L9 11z"/><path d="M3 3h18"/></svg></span><div><div class="li-title" style="color:var(--c4);">Antioxidant Properties</div><div class="li-text">Studied for its antioxidant properties that may protect cells from oxidative stress</div></div></div>
+        <div class="list-item rev" style="transition-delay:0.44s;border-left-color:var(--c4);"><span class="li-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c1)"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg></span><div><div class="li-title" style="color:var(--c4);">Herbal Remedies</div><div class="li-text">Used in essential oils for traditional herbal remedies</div></div></div>
+        <div class="list-item rev" style="transition-delay:0.52s;border-left-color:var(--c4);"><span class="li-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c1)"><circle cx="12" cy="8" r="4"/><path d="M8 8H3l2 8h2l1-4h8l1 4h2l2-8h-5"/></svg></span><div><div class="li-title" style="color:var(--c4);">Aromatherapy & Perfumery</div><div class="li-text">Applied in aromatherapy and perfumery due to its strong herbal scent; investigated for roles in digestive stimulation and appetite support</div></div></div>
+      </div>
+    </div>
+    <div class="glow-line"></div>
+    <div class="slide-num-indicator">20 / 25</div>
+  </div>
+
+  <!-- ═══ SLIDE 21 — SIDE EFFECTS OF BETA-THUJONE ═══ -->
+  <div class="slide" id="slide-21">
+    <div class="orb orb-amber" style="width:400px;height:400px;bottom:-5%;right:-5%;"></div>
+    <div class="slide-content">
+      <div style="margin-bottom:1.8rem;">
+        <div class="section-label rev">Safety Information</div>
+        <div class="display-sm rev" style="transition-delay:0.1s;">Side Effects of<br><span class="text-amber">Beta-Thujone</span></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.9rem;flex:1;align-items:start;">
+        <div class="info-card rev" style="transition-delay:0.12s;border-color:rgba(128,223,224,0.12);">
+          <div class="ic-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c4)"><circle cx="12" cy="12" r="10"/><line x1="8" y1="8" x2="16" y2="16"/><line x1="16" y1="8" x2="8" y2="16"/></svg></div>
+          <div class="ic-title" style="color:var(--c4);">Dizziness</div>
+          <div class="ic-body">Dizziness and headache — early neurological symptoms</div>
+        </div>
+        <div class="info-card rev" style="transition-delay:0.2s;border-color:rgba(128,223,224,0.12);">
+          <div class="ic-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c4)"><circle cx="12" cy="12" r="10"/><path d="M12 8v5"/><circle cx="12" cy="16" r="0.5" fill="currentColor"/></svg></div>
+          <div class="ic-title" style="color:var(--c4);">Nausea</div>
+          <div class="ic-body">Nausea and stomach irritation upon consumption</div>
+        </div>
+        <div class="info-card rev" style="transition-delay:0.28s;border-color:rgba(128,223,224,0.12);">
+          <div class="ic-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c4)"><circle cx="12" cy="12" r="10"/><path d="M8 15s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg></div>
+          <div class="ic-title" style="color:var(--c4);">Anxiety</div>
+          <div class="ic-body">Anxiety, restlessness, or nervousness — psychological effects</div>
+        </div>
+        <div class="info-card rev" style="transition-delay:0.36s;border-color:rgba(128,223,224,0.2);">
+          <div class="ic-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c4)"><polygon points="13,2 3,14 12,14 11,22 21,10 12,10"/></svg></div>
+          <div class="ic-title" style="color:var(--c4);">Tremors / Seizures</div>
+          <div class="ic-body">Tremors or muscle spasms at higher doses; seizures in severe overdose cases</div>
+        </div>
+        <div class="info-card rev" style="transition-delay:0.44s;border-color:rgba(128,223,224,0.12);">
+          <div class="ic-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c4)"><path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96-.46 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2Z"/><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96-.46 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2Z"/></svg></div>
+          <div class="ic-title" style="color:var(--c4);">Neurotoxicity</div>
+          <div class="ic-body">Confusion or impaired concentration; possible neurotoxicity — harm to the nervous system</div>
+        </div>
+        <div class="info-card rev" style="transition-delay:0.52s;border-color:rgba(128,223,224,0.12);">
+          <div class="ic-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c1)"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg></div>
+          <div class="ic-title" style="color:var(--c4);">Liver Stress</div>
+          <div class="ic-body">Liver stress or toxicity with prolonged high exposure; allergic reactions in some sensitive individuals</div>
+        </div>
+      </div>
+    </div>
+    <div class="glow-line"></div>
+    <div class="slide-num-indicator">21 / 25</div>
+  </div>
+
+  <!-- ═══ SLIDE 22 — CHEMICAL & PHYSICAL PROPERTIES OF BETA-THUJONE ═══ -->
+  <div class="slide" id="slide-22">
+    <div class="orb orb-amber" style="width:380px;height:380px;top:-5%;left:-5%;"></div>
+    <div class="slide-content">
+      <div style="margin-bottom:1.8rem;">
+        <div class="section-label rev">Properties</div>
+        <div class="display-sm rev" style="transition-delay:0.1s;">Chemical & Physical Properties<br><span class="text-amber">of Beta-Thujone</span></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:2vw;flex:1;align-items:start;">
+        <div class="rev" style="transition-delay:0.15s;padding:1.6rem;border-radius:16px;background:rgba(0,20,26,0.7);border:1px solid rgba(128,223,224,0.15);">
+          <div style="display:flex;align-items:center;gap:0.8rem;margin-bottom:1rem;">
+            <span style="font-size:1.5rem;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c1)"><path d="M9 3h6v8l3.5 8H5.5L9 11z"/><path d="M3 3h18"/></svg></span>
+            <div style="font-family:var(--ff-display);font-weight:700;font-size:1rem;color:var(--c4);">Chemical Properties</div>
+          </div>
+          <div class="prop-row" style="border-bottom-color:rgba(128,223,224,0.1);"><span class="pr-k">Chemical Formula</span><span class="pr-v" style="color:var(--c4);">C₁₀H₁₆O</span></div>
+          <div class="prop-row" style="border-bottom-color:rgba(128,223,224,0.1);"><span class="pr-k">Chemical Class</span><span class="pr-v" style="color:var(--c4);">Monoterpene Ketone</span></div>
+          <div class="prop-row" style="border-bottom-color:rgba(128,223,224,0.1);"><span class="pr-k">Structure</span><span class="pr-v" style="color:var(--c4);">Bicyclic molecular structure</span></div>
+          <div class="prop-row" style="border-bottom-color:rgba(128,223,224,0.1);"><span class="pr-k">Functional Group</span><span class="pr-v" style="color:var(--c4);">Ketone (C=O)</span></div>
+          <div class="prop-row" style="border-bottom-color:rgba(128,223,224,0.1);"><span class="pr-k">Isomeric Relation</span><span class="pr-v" style="color:var(--c4);">Structural isomer of α-Thujone</span></div>
+          <div class="prop-row"><span class="pr-k">Difference from α</span><span class="pr-v" style="color:var(--c4);">Different spatial arrangement</span></div>
+        </div>
+        <div class="rev" style="transition-delay:0.25s;padding:1.6rem;border-radius:16px;background:rgba(0,20,26,0.7);border:1px solid rgba(128,223,224,0.12);">
+          <div style="display:flex;align-items:center;gap:0.8rem;margin-bottom:1rem;">
+            <span style="font-size:1.5rem;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c1)"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/></svg></span>
+            <div style="font-family:var(--ff-display);font-weight:700;font-size:1rem;color:var(--c4);">Physical Properties</div>
+          </div>
+          <div class="prop-row" style="border-bottom-color:rgba(128,223,224,0.1);"><span class="pr-k">Appearance</span><span class="pr-v" style="color:var(--c4);">Colorless to pale yellow liquid</span></div>
+          <div class="prop-row" style="border-bottom-color:rgba(128,223,224,0.1);"><span class="pr-k">Water Solubility</span><span class="pr-v" style="color:var(--c4);">Insoluble in water</span></div>
+          <div class="prop-row" style="border-bottom-color:rgba(128,223,224,0.1);"><span class="pr-k">Organic Solvents</span><span class="pr-v" style="color:var(--c4);">Soluble in ethanol & oils</span></div>
+          <div class="prop-row" style="border-bottom-color:rgba(128,223,224,0.1);"><span class="pr-k">Volatility</span><span class="pr-v" style="color:var(--c4);">Volatile (easily evaporates)</span></div>
+          <div class="prop-row" style="border-bottom-color:rgba(128,223,224,0.1);"><span class="pr-k">Natural Presence</span><span class="pr-v" style="color:var(--c4);">Essential oils of wormwood</span></div>
+          <div class="prop-row"><span class="pr-k">Extraction</span><span class="pr-v" style="color:var(--c4);">Steam distillation method</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="glow-line"></div>
+    <div class="slide-num-indicator">22 / 25</div>
+  </div>
+
+  <!-- ═══ SLIDE 23 — CONCLUSION (BETA-THUJONE) ═══ -->
+  <div class="slide" id="slide-23">
+    <div class="orb orb-amber" style="width:450px;height:450px;bottom:-5%;left:-5%;"></div>
+    <div class="slide-content">
+      <div style="margin-bottom:2rem;">
+        <div class="section-label rev">Summary — Part 3</div>
+        <div class="display-sm rev" style="transition-delay:0.1s;">Conclusion:<br><span class="grad-amber">Beta-Thujone</span></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:1rem;flex:1;justify-content:center;">
+        <div class="list-item rev" style="transition-delay:0.15s;border-left-color:var(--c4);"><span class="li-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c1)"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg></span><div><div class="li-title" style="color:var(--c4);">Natural Monoterpene Ketone</div><div class="li-text">Beta-Thujone is a naturally occurring monoterpene ketone found in essential oils of plants such as <strong style="color:var(--c4);">Artemisia absinthium</strong></div></div></div>
+        <div class="list-item rev" style="transition-delay:0.25s;border-left-color:var(--c3);"><span class="li-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c1)"><path d="M6 18L14 6"/><path d="M6 18h12"/><path d="M9 12h6"/><circle cx="14" cy="6" r="2"/></svg></span><div><div class="li-title" style="color:var(--c3);">Isomeric Structure</div><div class="li-text">It has a bicyclic structure and shares the same molecular formula as Alpha-Thujone but <strong style="color:var(--c3);">differs in its spatial arrangement</strong></div></div></div>
+        <div class="list-item rev" style="transition-delay:0.35s;border-left-color:var(--c1);"><span class="li-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c1)"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/></svg></span><div><div class="li-title">Physical Character</div><div class="li-text">This compound is <strong style="color:var(--c1);">volatile, aromatic</strong>, and mainly soluble in oils and organic solvents</div></div></div>
+        <div class="list-item rev" style="transition-delay:0.45s;border-left-color:#f4a261;"><span class="li-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c4)"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span><div><div class="li-title" style="color:#f4a261;">Neurotoxic Risk</div><div class="li-text">Although it shows some biological activities, it should be handled with care due to its <strong style="color:#f4a261;">potential neurotoxic effects at high doses</strong></div></div></div>
+        <div class="glass-bright rev" style="padding:1rem 1.8rem;transition-delay:0.55s;">
+          <div class="italic" style="color:var(--c4);font-size:0.88rem;">Beta-Thujone is a fascinating bioactive compound with therapeutic potential, but its structural similarity to Alpha-Thujone demands the same cautious approach in clinical applications.</div>
+        </div>
+      </div>
+    </div>
+    <div class="glow-line"></div>
+    <div class="slide-num-indicator">23 / 25</div>
+  </div>
+
+  <!-- ═══ SLIDE 24 — ACKNOWLEDGMENT ═══ -->
+  <div class="slide" id="slide-24">
+    <div class="orb orb-green" style="width:500px;height:500px;top:50%;left:50%;transform:translate(-50%,-50%);opacity:0.04;"></div>
+    <div class="slide-content" style="align-items:center;justify-content:center;">
+      <div style="display:flex;flex-direction:column;align-items:center;text-align:center;gap:1.8rem;max-width:780px;">
+        <div class="section-label rev" style="transition-delay:0s;letter-spacing:0.3em;">With Sincere Gratitude</div>
+        <div class="display-sm rev" style="transition-delay:0.1s;"><span class="grad-green">Acknowledgment</span></div>
+
+        <div class="glass rev" style="padding:2rem 2.4rem;transition-delay:0.25s;text-align:left;width:100%;">
+          <div style="display:flex;align-items:center;gap:0.8rem;margin-bottom:1rem;">
+            <span style="font-size:1.4rem;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c1)"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg></span>
+            <div style="font-family:var(--ff-display);font-weight:700;font-size:1rem;color:var(--c1);">To Our Supervisor</div>
+          </div>
+          <div class="body" style="font-size:0.86rem;">We would like to express our sincere gratitude and appreciation to <strong style="color:var(--c1);">Dr. Khalil Abu Subaih</strong> for his valuable guidance, continuous support, and helpful instructions, which greatly contributed to the completion of this report in its best form. His efforts in explaining and clarifying the scientific information were highly appreciated.</div>
+        </div>
+
+        <div class="glass rev" style="padding:2rem 2.4rem;transition-delay:0.35s;text-align:left;width:100%;">
+          <div style="display:flex;align-items:center;gap:0.8rem;margin-bottom:1rem;">
+            <span style="font-size:1.4rem;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c2)"><path d="M20.42 4.58a5.4 5.4 0 0 0-7.65 0l-.77.78-.77-.78a5.4 5.4 0 0 0-7.65 0C1.46 6.7 1.33 10.28 4 13l8 8 8-8c2.67-2.72 2.54-6.3.42-8.42z"/></svg></span>
+            <div style="font-family:var(--ff-display);font-weight:700;font-size:1rem;color:var(--c2);">To Our Colleagues</div>
+          </div>
+          <div class="body" style="font-size:0.86rem;">We would also like to thank our colleagues for their cooperation, support, and teamwork during the preparation of this work, as well as for sharing ideas and information that helped improve the quality of this report.</div>
+        </div>
+
+        <div class="h-rule rev" style="transition-delay:0.45s;width:200px;margin:0;"></div>
+        <div class="italic rev" style="transition-delay:0.5s;font-size:1rem;color:var(--text2);">With sincere respect and appreciation to everyone.</div>
+        <div class="rev" style="transition-delay:0.55s;display:flex;gap:1.5rem;flex-wrap:wrap;justify-content:center;">
+          <span style="font-family:var(--ff-display);font-weight:600;color:#fff;">Malak</span>
+          <span style="color:rgba(0,183,181,0.3);">·</span>
+          <span style="font-family:var(--ff-display);font-weight:600;color:#fff;">Rania</span>
+          <span style="color:rgba(0,183,181,0.3);">·</span>
+          <span style="font-family:var(--ff-display);font-weight:600;color:#fff;">Noor</span>
+          <span style="color:rgba(0,183,181,0.3);">·</span>
+          <span style="font-family:var(--ff-display);font-weight:600;color:#fff;">Mohammed</span>
+        </div>
+      </div>
+    </div>
+    <div class="glow-line"></div>
+    <div class="slide-num-indicator">24 / 25</div>
+  </div>
+
+  <!-- ═══ SLIDE 25 — REFERENCES ═══ -->
+  <div class="slide" id="slide-25">
+    <div class="orb orb-green" style="width:400px;height:400px;bottom:-5%;right:-5%;opacity:0.05;"></div>
+    <div class="slide-content">
+      <div style="margin-bottom:2rem;">
+        <div class="section-label rev" style="transition-delay:0s;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c1)"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg> Scientific Citations</div>
+        <div class="display-sm rev" style="transition-delay:0.1s;"><span class="grad-green">References</span></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:0.9rem;flex:1;justify-content:center;">
+        <div class="list-item rev" style="transition-delay:0.15s;"><span class="li-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c1)"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg></span><div><div class="li-title">Juergens, U. R. (2014)</div><div class="li-text">Anti-inflammatory properties of 1,8-cineole (eucalyptol) in respiratory diseases. <em style="color:var(--text3);">Respiratory Medicine, 108(1), 12–18.</em> https://doi.org/10.1016/j.rmed.2013.07.013</div></div></div>
+        <div class="list-item rev" style="transition-delay:0.23s;border-left-color:var(--c3);"><span class="li-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c1)"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg></span><div><div class="li-title" style="color:var(--c3);">Kamatou, G. P. P., & Viljoen, A. M. (2010)</div><div class="li-text">A review of the application and pharmacological properties of α-thujone and β-thujone. <em style="color:var(--text3);">Journal of Ethnopharmacology, 132(2), 1–12.</em></div></div></div>
+        <div class="list-item rev" style="transition-delay:0.31s;border-left-color:var(--c4);"><span class="li-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c4)"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg></span><div><div class="li-title" style="color:var(--c4);">WHO (World Health Organization) (2007)</div><div class="li-text">WHO Guidelines on the Use of Herbal Medicines. <em style="color:var(--text3);">Geneva: World Health Organization.</em></div></div></div>
+        <div class="list-item rev" style="transition-delay:0.39s;border-left-color:#7dd3da;"><span class="li-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c1)"><path d="M6 18L14 6"/><path d="M6 18h12"/><path d="M9 12h6"/><circle cx="14" cy="6" r="2"/></svg></span><div><div class="li-title" style="color:#7dd3da;">NCBI PubChem Database</div><div class="li-text">National Center for Biotechnology Information — Alpha-Thujone & Beta-Thujone entries. <em style="color:var(--text3);">https://pubchem.ncbi.nlm.nih.gov/</em></div></div></div>
+        <div class="list-item rev" style="transition-delay:0.47s;border-left-color:#64b8c8;"><span class="li-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;color:var(--c1)"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span><div><div class="li-title" style="color:#64b8c8;">Additional References</div><div class="li-text"><em style="color:var(--text3);">Encyclopedia of Food and Health (2016)</em> — Thujone: Chemical properties and toxicology. · <em style="color:var(--text3);">Bruneton, J. (1999)</em> — Pharmacognosy, Phytochemistry, Medicinal Plants. Lavoisier Publishing.</div></div></div>
+      </div>
+    </div>
+    <div class="glow-line"></div>
+    <div class="slide-num-indicator">25 / 25</div>
+  </div>
+
+</div><!-- /presentation -->
+
+<div id="nav">
+  <button class="nav-btn" id="prev-btn">&#8592;</button>
+  <div id="slide-label">Use ← → keys or click</div>
+  <button class="nav-btn" id="next-btn">&#8594;</button>
+</div>
+<div id="key-hint">ARROW KEYS · SPACE · SWIPE</div>
+
+<script>
+// CURSOR
+const cursor = document.getElementById('cursor');
+const cursorRing = document.getElementById('cursor-ring');
+let mx=0, my=0, rx=0, ry=0;
+document.addEventListener('mousemove', e => {
+  mx=e.clientX; my=e.clientY;
+  cursor.style.left = mx+'px'; cursor.style.top = my+'px';
+});
+function animCursor() {
+  rx += (mx-rx)*0.12; ry += (my-ry)*0.12;
+  cursorRing.style.left = rx+'px'; cursorRing.style.top = ry+'px';
+  requestAnimationFrame(animCursor);
+}
+animCursor();
+
+// INTRO CANVAS
+(function initIntro(){
+  const c = document.getElementById('intro-canvas');
+  const ctx = c.getContext('2d');
+  c.width = window.innerWidth; c.height = window.innerHeight;
+  const pts = Array.from({length:160}, ()=>({
+    angle: Math.random()*Math.PI*2,
+    r: 80 + Math.random()*250,
+    speed: 0.002 + Math.random()*0.005,
+    size: 0.5 + Math.random()*2,
+    opacity: 0.2 + Math.random()*0.5
+  }));
+  function drawIntro(){
+    ctx.clearRect(0,0,c.width,c.height);
+    const cx=c.width/2, cy=c.height/2;
+    pts.forEach(p=>{
+      p.angle += p.speed;
+      const x = cx + Math.cos(p.angle)*p.r;
+      const y = cy + Math.sin(p.angle)*p.r;
+      ctx.beginPath();
+      ctx.arc(x,y,p.size,0,Math.PI*2);
+      ctx.fillStyle = `rgba(0,183,181,${p.opacity})`;
+      ctx.fill();
+    });
+    const g = ctx.createRadialGradient(cx,cy,0,cx,cy,120);
+    g.addColorStop(0,'rgba(0,183,181,0.06)');
+    g.addColorStop(1,'transparent');
+    ctx.fillStyle=g; ctx.fillRect(0,0,c.width,c.height);
+    requestAnimationFrame(drawIntro);
+  }
+  drawIntro();
+})();
+
+setTimeout(()=>{ document.getElementById('intro-title').classList.add('show'); }, 400);
+setTimeout(()=>{ document.getElementById('intro-line').classList.add('show'); }, 1200);
+setTimeout(()=>{ document.getElementById('intro-sub').classList.add('show'); }, 2400);
+setTimeout(()=>{ document.getElementById('intro-start').classList.add('show'); }, 3200);
+
+function startPresentation(){
+  const intro = document.getElementById('intro-screen');
+  intro.style.transition = 'opacity 1s ease';
+  intro.style.opacity = '0';
+  setTimeout(()=>{ intro.style.display='none'; }, 1000);
+}
+
+// THREE.JS BACKGROUND
+const bgCanvas = document.getElementById('bg-canvas');
+const bgRenderer = new THREE.WebGLRenderer({ canvas:bgCanvas, alpha:true, antialias:true });
+bgRenderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+bgRenderer.setSize(window.innerWidth,window.innerHeight);
+const bgScene = new THREE.Scene();
+const bgCam = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 1000);
+bgCam.position.z = 90;
+
+function makePLayer(count, spread, size, col, speed) {
+  const geo = new THREE.BufferGeometry();
+  const pos = new Float32Array(count*3);
+  const vel = [];
+  for(let i=0;i<count;i++){
+    pos[i*3]   = (Math.random()-0.5)*spread;
+    pos[i*3+1] = (Math.random()-0.5)*spread*0.6;
+    pos[i*3+2] = (Math.random()-0.5)*spread*0.3;
+    vel.push({x:(Math.random()-0.5)*speed, y:(Math.random()-0.5)*speed});
+  }
+  geo.setAttribute('position', new THREE.BufferAttribute(pos,3));
+  const mat = new THREE.PointsMaterial({ color:col, size, transparent:true, opacity:0.4 });
+  const pts = new THREE.Points(geo,mat);
+  bgScene.add(pts);
+  return {geo,vel,spread:spread/2};
+}
+const layers = [
+  makePLayer(180,220,0.4,0x00B7B5,0.018),
+  makePLayer(70,180,0.75,0x018790,0.014),
+  makePLayer(35,160,1.0,0x005461,0.009),
+];
+
+function animBg(){
+  requestAnimationFrame(animBg);
+  layers.forEach(l=>{
+    const pos = l.geo.attributes.position.array;
+    for(let i=0;i<l.vel.length;i++){
+      pos[i*3]   += l.vel[i].x;
+      pos[i*3+1] += l.vel[i].y;
+      if(Math.abs(pos[i*3])>l.spread) l.vel[i].x*=-1;
+      if(Math.abs(pos[i*3+1])>l.spread*0.6) l.vel[i].y*=-1;
+    }
+    l.geo.attributes.position.needsUpdate=true;
+  });
+  bgScene.rotation.y += 0.0003;
+  bgRenderer.render(bgScene,bgCam);
+}
+animBg();
+
+// THREE.JS: SLIDE 1 MOLECULE
+const mc1 = document.getElementById('mol1-canvas');
+const mr1 = new THREE.WebGLRenderer({canvas:mc1, alpha:true, antialias:true});
+const ms1 = new THREE.Scene();
+const mc1cam = new THREE.PerspectiveCamera(50,1,0.1,100);
+mc1cam.position.z=16;
+function resize1(){ const w=mc1.clientWidth,h=mc1.clientHeight; mr1.setSize(w,h,false); mc1cam.aspect=w/h; mc1cam.updateProjectionMatrix(); }
+resize1();
+
+const cuG = new THREE.SphereGeometry(1.3,32,32);
+const cuM = new THREE.MeshPhongMaterial({color:0x00B7B5,emissive:0x003d45,emissiveIntensity:0.6,shininess:120});
+const cuAtom = new THREE.Mesh(cuG,cuM);
+ms1.add(cuAtom);
+
+const glowG = new THREE.SphereGeometry(2.2,32,32);
+const glowM = new THREE.MeshBasicMaterial({color:0x00B7B5,transparent:true,opacity:0.05});
+ms1.add(new THREE.Mesh(glowG,glowM));
+
+const aCols = [0x00B7B5,0x018790,0x00d4d1,0x00B7B5,0x80dfe0,0x005461];
+const aPos = [[3.2,0.5,0],[-3.2,0.5,0],[0,3.5,0],[0,-3.5,0],[2.2,2.5,1.2],[-2.2,-2.5,-1.2]];
+aPos.forEach((pos,i)=>{
+  const ag = new THREE.SphereGeometry(0.6,20,20);
+  const am = new THREE.MeshPhongMaterial({color:aCols[i],emissive:aCols[i],emissiveIntensity:0.3,shininess:80});
+  const am2 = new THREE.Mesh(ag,am); am2.position.set(...pos); ms1.add(am2);
+  const dir = new THREE.Vector3(...pos);
+  const len = dir.length();
+  const bG = new THREE.CylinderGeometry(0.06,0.06,len-1.6,8);
+  const bM = new THREE.MeshBasicMaterial({color:0x003d45,transparent:true,opacity:0.5});
+  const bond = new THREE.Mesh(bG,bM);
+  bond.position.copy(dir.clone().multiplyScalar(0.5));
+  bond.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),dir.clone().normalize());
+  ms1.add(bond);
+});
+
+[5.5,7,8.5].forEach((r,i)=>{
+  const rg = new THREE.TorusGeometry(r,0.04,8,80);
+  const rm = new THREE.MeshBasicMaterial({color:[0x00B7B5,0x018790,0x005461][i],transparent:true,opacity:0.16});
+  const ring = new THREE.Mesh(rg,rm);
+  ring.rotation.set(i*0.5, i*0.7, i*0.3);
+  ms1.add(ring);
+});
+
+ms1.add(new THREE.AmbientLight(0xffffff,0.35));
+const dl1 = new THREE.DirectionalLight(0x00B7B5,1.4); dl1.position.set(6,6,6); ms1.add(dl1);
+const pl1 = new THREE.PointLight(0x018790,2.5,30); pl1.position.set(-4,-4,4); ms1.add(pl1);
+
+let t1=0;
+function anim1(){
+  requestAnimationFrame(anim1); t1+=0.007;
+  ms1.rotation.y=t1; ms1.rotation.x=Math.sin(t1*0.4)*0.25;
+  ms1.children.filter(c=>c.geometry&&c.geometry.type==='TorusGeometry').forEach((r,i)=>{ r.rotation.z=t1*(0.5+i*0.15); });
+  cuM.emissiveIntensity=0.4+Math.sin(t1*2)*0.25;
+  mr1.render(ms1,mc1cam);
+}
+anim1();
+
+// NAVIGATION
+const slides = document.querySelectorAll('.slide');
+const total = slides.length;
+let current=0, transitioning=false;
+
+const slideLabels = [
+  'Title','Contents','Introduction','Medical Uses','GC–MS Analysis',
+  'Structures','Oil Extraction','1,8-Cineole','Medical Uses (Cineole)','Cineole & Diabetes',
+  'Side Effects (Cineole)','Properties (Cineole)','Conclusion (Cineole)','Alpha-Thujone','Uses (α-Thujone)',
+  'Side Effects (α-Thujone)','Properties (α-Thujone)','Conclusion (α-Thujone)','Beta-Thujone','Uses (β-Thujone)',
+  'Side Effects (β-Thujone)','Properties (β-Thujone)','Conclusion (β-Thujone)','Acknowledgment','References'
+];
+
+const sideDotsEl = document.getElementById('side-dots');
+slides.forEach((_,i)=>{
+  const d=document.createElement('div');
+  d.className='sdot'+(i===0?' active':'');
+  d.onclick=()=>goTo(i);
+  sideDotsEl.appendChild(d);
+});
+
+function updateHUD(){
+  const n=current+1;
+  document.getElementById('hud-num').textContent=String(n).padStart(2,'0');
+  document.getElementById('progress-fill').style.width=((n/total)*100)+'%';
+  document.querySelectorAll('.sdot').forEach((d,i)=>d.classList.toggle('active',i===current));
+  document.getElementById('slide-label').textContent=slideLabels[current]||'';
+}
+
+function revealSlide(slide){
+  const els=slide.querySelectorAll('.rev,.rev-l,.rev-r,.rev-s');
+  els.forEach(el=>{
+    el.classList.remove('in');
+    const delay=(parseFloat(el.style.transitionDelay||'0'))*1000;
+    setTimeout(()=>el.classList.add('in'), delay+100);
+  });
+}
+
+const overlay = document.getElementById('transition-overlay');
+
+function goTo(idx){
+  if(transitioning||idx===current) return;
+  transitioning=true;
+  overlay.classList.add('active');
+  setTimeout(()=>{
+    slides[current].classList.remove('active');
+    slides[idx].classList.add('active');
+    current=idx;
+    updateHUD();
+    overlay.classList.remove('active');
+    setTimeout(()=>{ revealSlide(slides[current]); transitioning=false; }, 100);
+  }, 350);
+}
+
+function goNext(){ if(current<total-1) goTo(current+1); }
+function goPrev(){ if(current>0) goTo(current-1); }
+
+document.getElementById('next-btn').onclick=goNext;
+document.getElementById('prev-btn').onclick=goPrev;
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight'||e.key==='ArrowDown'||e.key===' ') goNext();
+  if(e.key==='ArrowLeft'||e.key==='ArrowUp') goPrev();
+});
+
+let tX=0;
+document.addEventListener('touchstart',e=>{tX=e.touches[0].clientX;});
+document.addEventListener('touchend',e=>{
+  const dx=e.changedTouches[0].clientX-tX;
+  if(dx<-50) goNext(); if(dx>50) goPrev();
+});
+
+window.addEventListener('resize',()=>{
+  bgRenderer.setSize(window.innerWidth,window.innerHeight);
+  bgCam.aspect=window.innerWidth/window.innerHeight; bgCam.updateProjectionMatrix();
+  resize1();
+});
+
+slides[0].classList.add('active');
+updateHUD();
+setTimeout(()=>revealSlide(slides[0]),300);
+</script>
+</body>
+</html>
